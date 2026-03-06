@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 
-use dialoguer::Input;
+use dialoguer::{Confirm, Input};
 
+use crate::commands::init;
 use crate::commands::shell_init;
 use crate::config;
 use crate::output;
@@ -37,6 +38,9 @@ pub fn run() -> anyhow::Result<()> {
         projects_dir
     };
 
+    // Offer to auto-index existing subdirectories as projects
+    auto_index_projects(&final_projects_dir)?;
+
     initialize_shell()?;
 
     // Save the configuration
@@ -49,6 +53,64 @@ pub fn run() -> anyhow::Result<()> {
     std::fs::write(global_path, toml_string)?;
 
     output::success("Setup complete! You can now start using enx to manage your projects.");
+
+    Ok(())
+}
+
+/// Scan the projects directory for existing subdirectories and offer to
+/// register each one via `enx init`. Only immediate children that are
+/// directories are considered.
+fn auto_index_projects(projects_dir: &str) -> anyhow::Result<()> {
+    let path = PathBuf::from(projects_dir);
+
+    if !path.is_dir() {
+        return Ok(());
+    }
+
+    let subdirs: Vec<_> = std::fs::read_dir(&path)?
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| entry.path().is_dir())
+        .collect();
+
+    if subdirs.is_empty() {
+        return Ok(());
+    }
+
+    let names: Vec<_> = subdirs
+        .iter()
+        .filter_map(|e| e.file_name().to_str().map(String::from))
+        .collect();
+
+    output::info(&format!(
+        "Found {} existing subdirector{} in '{}':",
+        names.len(),
+        if names.len() == 1 { "y" } else { "ies" },
+        projects_dir
+    ));
+    for name in &names {
+        output::detail(name);
+    }
+
+    let should_index = Confirm::new()
+        .with_prompt("Register all of them as enx projects?")
+        .default(true)
+        .interact()?;
+
+    if !should_index {
+        return Ok(());
+    }
+
+    for entry in &subdirs {
+        let dir = entry.path();
+        let name = entry.file_name().to_str().unwrap_or("unknown").to_string();
+
+        match init::run(Some(dir.clone())) {
+            Ok(()) => {}
+            Err(e) => {
+                output::warning(&format!("skipping '{}': {}", name, e));
+            }
+        }
+    }
 
     Ok(())
 }
