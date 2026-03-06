@@ -6,6 +6,7 @@ mod shell;
 mod util;
 
 use clap::Parser;
+use std::io::Write;
 
 fn main() {
     let result = cli::Cli::try_parse();
@@ -22,6 +23,7 @@ fn main() {
                 if let Some(task_name) = raw_args.first() {
                     if let Err(e) = require_setup() {
                         output::error(&format!("{:?}", e));
+                        reset_keyboard_mode();
                         std::process::exit(1);
                     }
 
@@ -30,8 +32,10 @@ fn main() {
                     if let Err(e) = commands::run::run(Some(task_name.as_str()), task_args.to_vec())
                     {
                         output::error(&format!("{:?}", e));
+                        reset_keyboard_mode();
                         std::process::exit(1);
                     }
+                    reset_keyboard_mode();
                     return;
                 }
             }
@@ -42,8 +46,11 @@ fn main() {
 
     if let Err(e) = dispatch(cli) {
         output::error(&format!("{:?}", e));
+        reset_keyboard_mode();
         std::process::exit(1);
     }
+
+    reset_keyboard_mode();
 }
 
 /// Ensure that `enx setup` has been run before allowing any other command.
@@ -84,4 +91,17 @@ fn dispatch(cli: cli::Cli) -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+/// Disable the kitty keyboard protocol if it was left enabled.
+///
+/// The `console` 0.16.x crate (used by `dialoguer`) activates the kitty
+/// keyboard protocol during raw-mode key reads.  If cleanup is missed the
+/// terminal keeps encoding keys as CSI u sequences, which shells like
+/// fish cannot interpret — e.g. Enter appears as `u`, Backspace as `7u`.
+///
+/// Sending the "pop" sequence (`\x1b[<u`) restores normal behaviour.
+fn reset_keyboard_mode() {
+    let _ = std::io::stderr().write_all(b"\x1b[<u");
+    let _ = std::io::stderr().flush();
 }
