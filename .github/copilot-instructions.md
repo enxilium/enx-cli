@@ -86,9 +86,6 @@ enx/
 │   ├── services/
 │   │   ├── mod.rs
 │   │   └── manager.rs        # Start/stop/status background services
-│   ├── tools/
-│   │   ├── mod.rs
-│   │   └── version.rs        # Tool version management (install, switch, verify)
 │   ├── fuzzy.rs              # Fuzzy matching utility (shared by cd, env, etc.)
 │   ├── shell.rs              # Shell integration helpers (cd hack, env export)
 │   └── output.rs             # Colored, formatted terminal output helpers
@@ -105,13 +102,6 @@ enx/
 [project]
 name = "my-app"                          # Project display name (used in `enx projects`)
 
-# ──────────────────────────────────────
-# Tool versions (managed by enx)
-# ──────────────────────────────────────
-[tools]
-node = "20.11.0"
-python = "3.12.1"
-rust = alhost:5432/myapp_dev"
 REDIS_URL = "redis://localhost:6379"
 APP_SECRET = "dev-secret-key"
 
@@ -239,10 +229,10 @@ path = "/home/user/dotfiles"
 | Command | Behavior |
 |---|---|
 | `enx cd <query>` | Fuzzy-match `<query>` against registered project names. Print the matched project's path to stdout (consumed by a shell function to actually `cd`). If no match or ambiguous, print error to stderr. No args = error. |
-| `enx up` | Must be inside a project with `enx.toml`. Install tools (version management), start services, load env, run `[up]` steps (with platform overrides merged). |
+| `enx up` | Must be inside a project with `enx.toml`. Start services, load env, run `[up]` steps (with platform overrides merged). |
 | `enx down` | Run `[down]` steps, stop managed services. |
 | `enx start` | Run the `[start]` command from `enx.toml`. |
-| `enx doctor` | Check: enx.toml exists, required tools installed & correct versions, services healthy, env vars set. Report pass/fail per check. |
+| `enx doctor` | Check: enx.toml exists, services healthy, env vars set. Report pass/fail per check. |
 | `enx projects` | List all registered projects: name, path, whether path exists on disk. |
 | `enx add [path]` | Register `[path]` (default `.`) as a project. Read `enx.toml` for the name, or prompt/infer. |
 | `enx remove <name>` | Unregister a project by name (does NOT delete files). |
@@ -251,7 +241,7 @@ path = "/home/user/dotfiles"
 | `enx env <query>` | Fuzzy-match `<query>` against environment names defined in `enx.toml`. Switch active env vars. |
 | `enx run <task> [-- args...]` | Run a named task. Resolution order: project `enx.toml` → global `config.toml`. Forward extra args. |
 | `enx open <target>` | Open a named target from `[open]`. If URL, open in browser. If command, execute it. Defaults: `repo` → browser, `code` → editor. |
-| `enx status`w: current project name, active environment, tool versions, running services, git branch. |
+| `enx status` | Show current project name, active environment, running services, git branch. |
 | `enx completions <shell>` | Print shell completion script for `bash`, `zsh`, `fish`, or `powershell`. |
 | `enx self-update` | Download and replace the current binary with the latest release. |
 | `enx <anything_else>` | Treated as `enx run <anything_else>`. This allows bare `enx lint`, `enx test`, etc. |
@@ -384,7 +374,7 @@ Build the project in this order. Each phase should be fully functional and teste
 ### Phase 5 — Lifecycle Commands
 **Rust concepts introduced:** `Vec<Box<dyn ...>>` (trait objects, if applicable), sequencing, platform detection (`cfg!(target_os)`), conditional compilation.
 
-- Implement `enx up` (tool install, service start, step execution, platform overres).
+- Implement `enx up` (service start, step execution, platform overres).
 - Implement `enx down`.
 - Implement `enx start`.
 
@@ -395,18 +385,10 @@ Build the project in this order. Each phase should be fully functional and teste
 - Track running services in `.enx/services.json` (PIDs, container names).
 - Wire into `enx up`, `enx down`, `enx doctor`.
 
-### Phase 7 — Tool Version Management
-**Rust concepts introduced:** HTTP requests (if downloading), `std::fs` manipulation, `PATH` modification, shims or symlinking.
-
-- Detect required tool versions from `enx.toml`.
-- Check if installed and correct version.
-- Wire into `enx doctor`.
-- (Stretch: auto-install missing tools.)
-
 ### Phase 8 — Doctor, Status, Open
 **Rust concepts introduced:** trait-based check system, `open` crate, dynamic dispatch.
 
-- Implement `enx doctor` (check tool versions, services, env vars).
+- Implement `enx doctor` (check services, env vars).
 - Int `enx status`.
 - Implement `enx open <target>`.
 
@@ -452,9 +434,6 @@ $ enx cd api
 
 $ enx up
   ▸ Detected enx.toml for "api-service"
-  ▸ Checking tools...
-    ✓ node 20.11.0 (installed)
-    ✗ python 3.12.1 (found 3.11.4 — run `enx tools install` to fix)
   ▸ Starting services...
     ✓ postgres (healthy)
     ✓ redis (healthy)
@@ -471,7 +450,6 @@ $ enx status
   Project:     api-service
   Path:        ~/code/: staging
   Branch:      feature/new-auth
-  Tools:       node 20.11.0 ✓ | python 3.12.1 ✗
   Services:    postgres ✓ | redis ✓
 
 $ enx doctor
@@ -510,8 +488,7 @@ $ enx open code
 
 ## 14. Open Design Questions (Decide During Implementation)
 
-1. **Tool version management strategy:** Shims (like `mise`)? Symlinks? Just PATH manipulation? Or just detection + doctor warnings without auto-install?
-2. **Service process tracking:** Docker container names? PID files? A local `.enx/state.toml`?
-3. **`enx cd` fuzzy threshold:** How fuzzy is too fuzzy? Should it require confirmation if the match score is low?
-4. **`enx up` idempotency:** Should `enx up` be safe to run repeatedly? (Yes — design for it.)
-5. **Self-update source:** GitHub Releases? A custom server? Cargo install?
+1. **Service process tracking:** Docker container names? PID files? A local `.enx/state.toml`?
+2. **`enx cd` fuzzy threshold:** How fuzzy is too fuzzy? Should it require confirmation if the match score is low?
+3. **`enx up` idempotency:** Should `enx up` be safe to run repeatedly? (Yes — design for it.)
+4. **Self-update source:** GitHub Releases? A custom server? Cargo install?

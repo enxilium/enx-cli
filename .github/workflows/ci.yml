@@ -1,0 +1,114 @@
+name: CI
+
+on:
+    push:
+        branches:
+            - "**"
+    pull_request:
+
+jobs:
+    checks:
+        name: Check, fmt, clippy, test (${{ matrix.os }})
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [ubuntu-latest, windows-latest]
+            steps:
+                - name: Checkout
+                  uses: actions/checkout@v4
+
+                - name: Install Rust toolchain
+                  uses: dtolnay/rust-toolchain@stable
+                  with:
+                      components: rustfmt, clippy
+
+                - name: Cargo check
+                  run: cargo check --all-targets
+
+                - name: Cargo fmt
+                  run: cargo fmt --all -- --check
+
+                - name: Cargo clippy
+                  run: cargo clippy --all-targets -- -D warnings
+
+                - name: Cargo test
+                  run: cargo test --all-targets
+
+    build-binaries:
+        name: Build binaries (${{ matrix.target_name }})
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - os: ubuntu-latest
+                      target_name: linux-x86_64
+                      artifact_name: enx-linux-x86_64
+                      bin_path: target/release/enx
+                    - os: ubuntu-24.04-arm
+                      target_name: linux-aarch64
+                      artifact_name: enx-linux-aarch64
+                      bin_path: target/release/enx
+                    - os: macos-13
+                      target_name: macos-x86_64
+                      artifact_name: enx-macos-x86_64
+                      bin_path: target/release/enx
+                    - os: macos-latest
+                      target_name: macos-aarch64
+                      artifact_name: enx-macos-aarch64
+                      bin_path: target/release/enx
+                    - os: windows-latest
+                      target_name: windows-x86_64
+                      artifact_name: enx-windows-x86_64.exe
+                      bin_path: target/release/enx.exe
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Install Rust toolchain
+              uses: dtolnay/rust-toolchain@stable
+
+            - name: Build release binary
+              run: cargo build --release
+
+            - name: Stage binary (unix)
+              if: runner.os != 'Windows'
+              run: cp "${{ matrix.bin_path }}" "${{ matrix.artifact_name }}"
+
+            - name: Stage binary (windows)
+              if: runner.os == 'Windows'
+              shell: pwsh
+              run: Copy-Item "${{ matrix.bin_path }}" "${{ matrix.artifact_name }}"
+
+            - name: Upload artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: ${{ matrix.artifact_name }}
+                  path: ${{ matrix.artifact_name }}
+                  if-no-files-found: error
+
+    publish-nightly:
+        name: Publish nightly binaries
+        needs: [checks, build-binaries]
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+        steps:
+            - name: Download all artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  path: dist
+                  merge-multiple: true
+
+            - name: Publish/Update nightly release
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: nightly
+                  name: Nightly
+                  prerelease: true
+                  make_latest: false
+                  generate_release_notes: false
+                  overwrite_files: true
+                  files: dist/*
