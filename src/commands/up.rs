@@ -28,7 +28,7 @@ pub fn run() -> anyhow::Result<()> {
         }
 
         anyhow::bail!(
-            "Could not parse up configuration. Please check the enx.toml file to ensure it is not corrupted."
+            "could not parse [up] section in enx.toml. Please check the file to ensure it is not corrupted."
         );
     }
 

@@ -63,7 +63,7 @@ pub enum Commands {
         query: Option<String>,
     },
 
-    /// Opens a file, directory, or URL associated with the project. The target is defined in the project's enx.toml file under the [open] section.
+    /// Opens a URL in the default browser. Targets are defined in the project's enx.toml under [open] and must be URLs.
     Open { target: String },
 
     /// Shows current project's status.

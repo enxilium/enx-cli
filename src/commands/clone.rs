@@ -7,20 +7,39 @@ use crate::config;
 use crate::config::global;
 use crate::output;
 
+/// Extract the repository name from a Git URL.
+///
+/// Handles HTTPS URLs (`https://github.com/user/repo.git`), SSH URLs
+/// (`git@github.com:user/repo.git`), and bare names (`repo`). The trailing
+/// `.git` suffix is stripped if present, and any trailing slashes are ignored.
+fn repo_name_from_url(url: &str) -> String {
+    url.trim_end_matches('/')
+        .rsplit(['/', ':'])
+        .next()
+        .unwrap_or(url)
+        .trim_end_matches(".git")
+        .to_string()
+}
+
 pub fn run(repo: &str, path: Option<PathBuf>) -> anyhow::Result<()> {
-    let mut cmd = Command::new("git");
-
-    cmd.args(["clone", repo]);
-
-    if let Some(p) = &path {
-        cmd.arg(p);
+    // Determine where the clone will land so we can pass it to `init::run`.
+    let clone_path = if let Some(p) = &path {
+        p.clone()
     } else {
         let global_config = global::GlobalConfig::load_from_file(&config::global_config_path()?)?;
 
-        if let Some(dir) = global_config.projects_dir() {
-            cmd.arg(&dir);
-        }
-    }
+        let base = match global_config.projects_dir() {
+            Some(dir) => PathBuf::from(dir),
+            None => std::env::current_dir()?,
+        };
+
+        base.join(repo_name_from_url(repo))
+    };
+
+    let mut cmd = Command::new("git");
+    cmd.args(["clone", repo]);
+    cmd.arg(&clone_path);
+
     let status = cmd.status()?;
 
     if !status.success() {
@@ -31,7 +50,7 @@ pub fn run(repo: &str, path: Option<PathBuf>) -> anyhow::Result<()> {
 
     output::success("Repository cloned successfully. Running init...");
 
-    init::run(path)?;
+    init::run(Some(clone_path))?;
 
     output::success("All done!");
 

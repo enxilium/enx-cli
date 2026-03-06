@@ -77,12 +77,30 @@ impl EnvConfig {
             .get(env_name)
             .with_context(|| format!("environment '{env_name}' is not defined under [env]"))?;
 
-        dotenv::from_path(env_file_path).with_context(|| {
-            format!("failed to load environment variables from '{env_file_path}'")
-        })?;
+        // Read the dotenv file and parse key=value pairs without polluting
+        // the current process environment.
+        let content = std::fs::read_to_string(env_file_path)
+            .with_context(|| format!("failed to read environment file '{env_file_path}'"))?;
 
-        // Collect all environment variables (dotenv::from_path loads them into the current process)
-        let vars = std::env::vars().collect();
+        let mut vars = HashMap::new();
+        for line in content.lines() {
+            let trimmed = line.trim();
+            if trimmed.is_empty() || trimmed.starts_with('#') {
+                continue;
+            }
+            if let Some((key, value)) = trimmed.split_once('=') {
+                let key = key.trim().to_string();
+                // Strip optional surrounding quotes from the value
+                let value = value.trim();
+                let value = value
+                    .strip_prefix('"')
+                    .and_then(|v| v.strip_suffix('"'))
+                    .or_else(|| value.strip_prefix('\'').and_then(|v| v.strip_suffix('\'')))
+                    .unwrap_or(value)
+                    .to_string();
+                vars.insert(key, value);
+            }
+        }
         Ok(vars)
     }
 

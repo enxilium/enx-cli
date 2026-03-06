@@ -64,6 +64,11 @@ pub fn run(path: Option<PathBuf>) -> anyhow::Result<()> {
     }
 
     for (name, path) in &registry.projects {
+        // Skip stale entries whose directories no longer exist on disk —
+        // is_same_file returns an IO error when either path is missing.
+        if !path.exists() {
+            continue;
+        }
         if is_same_file(project_path.as_path(), path)? {
             return Err(anyhow::anyhow!(
                 "This directory is already registered as project '{}'",

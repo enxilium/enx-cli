@@ -11,11 +11,11 @@ pub fn success(message: &str) {
 }
 
 pub fn warning(message: &str) {
-    println!("{} {}", "⚠".yellow(), message);
+    eprintln!("{} {}", "⚠".yellow(), message);
 }
 
 pub fn error(message: &str) {
-    println!("{} {}", "✗".red(), message);
+    eprintln!("{} {}", "✗".red(), message);
 }
 
 pub fn header(message: &str) {

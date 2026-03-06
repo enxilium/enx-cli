@@ -19,6 +19,11 @@ fn main() {
                 let raw_args: Vec<String> = std::env::args().skip(1).collect();
 
                 if let Some(task_name) = raw_args.first() {
+                    if let Err(e) = require_setup() {
+                        output::error(&format!("{:?}", e));
+                        std::process::exit(1);
+                    }
+
                     let task_args = &raw_args[1..];
 
                     if let Err(e) = commands::run::run(Some(task_name.as_str()), task_args.to_vec())
@@ -40,7 +45,24 @@ fn main() {
     }
 }
 
+/// Ensure that `enx setup` has been run before allowing any other command.
+fn require_setup() -> anyhow::Result<()> {
+    let global_path = config::global_config_path()?;
+    let global_config = config::global::GlobalConfig::load_from_file(&global_path)?;
+
+    if !global_config.is_setup_complete() {
+        anyhow::bail!("enx has not been set up yet. Please run `enx setup` first.");
+    }
+
+    Ok(())
+}
+
 fn dispatch(cli: cli::Cli) -> anyhow::Result<()> {
+    // Setup is the only command that can run without prior configuration.
+    if !matches!(cli.command, cli::Commands::Setup) {
+        require_setup()?;
+    }
+
     match cli.command {
         cli::Commands::Projects => commands::projects::run()?,
         cli::Commands::Init { path } => commands::init::run(path)?,
