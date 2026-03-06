@@ -21,3 +21,4 @@ commands = [
 [tasks]
 
 [open]
+repo = "https://github.com/enxilium/enx-cli"

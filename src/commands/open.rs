@@ -10,10 +10,7 @@ use crate::output;
 pub fn run(target: &str) -> anyhow::Result<()> {
     let current_dir = std::env::current_dir()?;
 
-    let project_config = config::project::ProjectConfig::load_from_file(&current_dir)
-        .map_err(|_| anyhow::anyhow!(
-            "no project configuration found in the current directory. Are you sure you're in the right project?"
-        ))?;
+    let project_config = config::project::ProjectConfig::load_from_file(&current_dir)?;
 
     let open_config = project_config
         .open

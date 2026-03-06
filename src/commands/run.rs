@@ -35,16 +35,25 @@ fn resolve_task(
     task_name: &str,
     project_dir: &Path,
 ) -> anyhow::Result<(TaskConfig, HashMap<String, String>)> {
-    if let Ok(project_config) = config::project::ProjectConfig::load_from_file(project_dir) {
-        let env_vars = collect_env_vars(&project_config);
+    match config::project::ProjectConfig::load_from_file(project_dir) {
+        Ok(project_config) => {
+            let env_vars = collect_env_vars(&project_config);
 
-        if let Some(task) = project_config
-            .tasks
-            .as_ref()
-            .and_then(|tasks| tasks.get(task_name))
-            .cloned()
-        {
-            return Ok((task, env_vars));
+            if let Some(task) = project_config
+                .tasks
+                .as_ref()
+                .and_then(|tasks| tasks.get(task_name))
+                .cloned()
+            {
+                return Ok((task, env_vars));
+            }
+        }
+        Err(e) => {
+            // If the file exists but is malformed, warn the user so they know
+            // their config has problems — then fall through to global tasks.
+            if project_dir.join("enx.toml").exists() {
+                output::warning(&format!("failed to parse enx.toml: {e}"));
+            }
         }
     }
 
@@ -156,18 +165,22 @@ fn list_tasks(project_dir: &Path) -> anyhow::Result<()> {
     let mut has_tasks = false;
 
     // Load and display project tasks
-    if let Ok(project_config) = config::project::ProjectConfig::load_from_file(project_dir)
-        && let Some(tasks) = &project_config.tasks
-        && !tasks.is_empty()
-    {
-        has_tasks = true;
-        output::header("Project Tasks");
-        let items: Vec<_> = tasks.iter().collect();
-        let last = items.len().saturating_sub(1);
-        for (i, (name, task)) in items.iter().enumerate() {
-            print_task_entry(name, task, i == last);
+    match config::project::ProjectConfig::load_from_file(project_dir) {
+        Ok(project_config) if project_config.tasks.as_ref().is_some_and(|t| !t.is_empty()) => {
+            let tasks = project_config.tasks.as_ref().unwrap();
+            has_tasks = true;
+            output::header("Project Tasks");
+            let items: Vec<_> = tasks.iter().collect();
+            let last = items.len().saturating_sub(1);
+            for (i, (name, task)) in items.iter().enumerate() {
+                print_task_entry(name, task, i == last);
+            }
+            output::newline();
         }
-        output::newline();
+        Err(e) if project_dir.join("enx.toml").exists() => {
+            output::warning(&format!("failed to parse enx.toml: {e}"));
+        }
+        _ => {}
     }
 
     // Load and display global tasks

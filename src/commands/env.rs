@@ -9,8 +9,7 @@ use crate::shell::Finalizer;
 pub fn run(query: Option<&str>) -> anyhow::Result<()> {
     let current_dir = std::env::current_dir()?;
 
-    let project_config = config::project::ProjectConfig::load_from_file(&current_dir)
-        .map_err(|_| anyhow::anyhow!("No project configuration found in the current directory. Are you sure you're in the right project?"))?;
+    let project_config = config::project::ProjectConfig::load_from_file(&current_dir)?;
 
     let env_config = project_config.env
         .as_ref()

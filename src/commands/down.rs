@@ -7,36 +7,29 @@ use crate::output;
 pub fn run() -> anyhow::Result<()> {
     let current_dir = std::env::current_dir()?;
 
-    if let Ok(project_config) = config::project::ProjectConfig::load_from_file(&current_dir) {
-        let env = collect_env_vars(&project_config);
-        if let Some(down_config) = project_config.down {
-            output::info(&format!("Tearing down {}...", project_config.project.name));
+    let project_config = config::project::ProjectConfig::load_from_file(&current_dir)?;
+    let env = collect_env_vars(&project_config);
+    let down_config = project_config
+        .down
+        .ok_or_else(|| anyhow::anyhow!("no [down] section found in enx.toml"))?;
 
-            let steps = if cfg!(target_os = "linux") {
-                down_config.linux.as_ref().map(|p| &p.steps)
-            } else if cfg!(target_os = "macos") {
-                down_config.macos.as_ref().map(|p| &p.steps)
-            } else if cfg!(target_os = "windows") {
-                down_config.windows.as_ref().map(|p| &p.steps)
-            } else {
-                None
-            }
-            .unwrap_or(&down_config.steps);
+    output::info(&format!("Tearing down {}...", project_config.project.name));
 
-            for command in steps {
-                execute_command_with_spinner(command, &current_dir, &env)?;
-            }
+    let steps = if cfg!(target_os = "linux") {
+        down_config.linux.as_ref().map(|p| &p.steps)
+    } else if cfg!(target_os = "macos") {
+        down_config.macos.as_ref().map(|p| &p.steps)
+    } else if cfg!(target_os = "windows") {
+        down_config.windows.as_ref().map(|p| &p.steps)
+    } else {
+        None
+    }
+    .unwrap_or(&down_config.steps);
 
-            output::success("Tear-down complete!");
-            return Ok(());
-        }
-
-        anyhow::bail!(
-            "could not parse [down] section in enx.toml. Please check the file to ensure it is not corrupted."
-        );
+    for command in steps {
+        execute_command_with_spinner(command, &current_dir, &env)?;
     }
 
-    anyhow::bail!(
-        "No project configuration found in the current directory. Are you sure you're in the right project?"
-    )
+    output::success("Tear-down complete!");
+    Ok(())
 }

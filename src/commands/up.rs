@@ -7,36 +7,29 @@ use crate::output;
 pub fn run() -> anyhow::Result<()> {
     let current_dir = std::env::current_dir()?;
 
-    if let Ok(project_config) = config::project::ProjectConfig::load_from_file(&current_dir) {
-        let env = collect_env_vars(&project_config);
-        if let Some(up_config) = project_config.up {
-            output::info(&format!("Bootstrapping {}...", project_config.project.name));
+    let project_config = config::project::ProjectConfig::load_from_file(&current_dir)?;
+    let env = collect_env_vars(&project_config);
+    let up_config = project_config
+        .up
+        .ok_or_else(|| anyhow::anyhow!("no [up] section found in enx.toml"))?;
 
-            let steps = if cfg!(target_os = "linux") {
-                up_config.linux.as_ref().map(|p| &p.steps)
-            } else if cfg!(target_os = "macos") {
-                up_config.macos.as_ref().map(|p| &p.steps)
-            } else if cfg!(target_os = "windows") {
-                up_config.windows.as_ref().map(|p| &p.steps)
-            } else {
-                None
-            }
-            .unwrap_or(&up_config.steps);
+    output::info(&format!("Bootstrapping {}...", project_config.project.name));
 
-            for command in steps {
-                execute_command_with_spinner(command, &current_dir, &env)?;
-            }
+    let steps = if cfg!(target_os = "linux") {
+        up_config.linux.as_ref().map(|p| &p.steps)
+    } else if cfg!(target_os = "macos") {
+        up_config.macos.as_ref().map(|p| &p.steps)
+    } else if cfg!(target_os = "windows") {
+        up_config.windows.as_ref().map(|p| &p.steps)
+    } else {
+        None
+    }
+    .unwrap_or(&up_config.steps);
 
-            output::success("Environment ready!");
-            return Ok(());
-        }
-
-        anyhow::bail!(
-            "could not parse [up] section in enx.toml. Please check the file to ensure it is not corrupted."
-        );
+    for command in steps {
+        execute_command_with_spinner(command, &current_dir, &env)?;
     }
 
-    anyhow::bail!(
-        "No project configuration found in the current directory. Are you sure you're in the right project?"
-    )
+    output::success("Environment ready!");
+    Ok(())
 }

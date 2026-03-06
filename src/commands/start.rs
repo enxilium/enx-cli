@@ -7,23 +7,16 @@ use crate::output;
 pub fn run() -> anyhow::Result<()> {
     let current_dir = std::env::current_dir()?;
 
-    if let Ok(project_config) = config::project::ProjectConfig::load_from_file(&current_dir) {
-        let env = collect_env_vars(&project_config);
-        if let Some(start_config) = project_config.start {
-            output::info(&format!("Starting {}...", project_config.project.name));
-            for command in start_config.commands {
-                execute_command(&command, &current_dir, &env)?;
-            }
+    let project_config = config::project::ProjectConfig::load_from_file(&current_dir)?;
+    let env = collect_env_vars(&project_config);
+    let start_config = project_config
+        .start
+        .ok_or_else(|| anyhow::anyhow!("no [start] section found in enx.toml"))?;
 
-            return Ok(());
-        }
-
-        anyhow::bail!(
-            "could not parse [start] section in enx.toml. Please check the file to ensure it is not corrupted."
-        );
+    output::info(&format!("Starting {}...", project_config.project.name));
+    for command in start_config.commands {
+        execute_command(&command, &current_dir, &env)?;
     }
 
-    anyhow::bail!(
-        "No project configuration found in the current directory. Are you sure you're in the right project?"
-    )
+    Ok(())
 }
