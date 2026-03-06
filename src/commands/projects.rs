@@ -10,7 +10,9 @@ pub fn run() -> anyhow::Result<()> {
     let registry = config::registry::Registry::load_from_file(&registry_path)?;
 
     if registry.projects.is_empty() {
-        output::warning("No projects registered yet. Use enx init or enx clone to initialize a project.");
+        output::warning(
+            "No projects registered yet. Use enx init or enx clone to initialize a project.",
+        );
         return Ok(());
     }
 

@@ -12,7 +12,6 @@ pub fn run(name: &str) -> anyhow::Result<()> {
     match registry.find_path_by_name(name) {
         Some(path) => {
             if !path.exists() {
-                
                 let should_delete = Confirm::new()
                     .with_prompt("Do you also want to delete the project directory?")
                     .default(false)
@@ -22,7 +21,10 @@ pub fn run(name: &str) -> anyhow::Result<()> {
                     std::fs::remove_dir_all(&path)?;
                     output::success(&format!("Project directory '{}' deleted.", path.display()));
                 } else {
-                    output::warning(&format!("Project directory '{}' was not deleted. You may want to delete it manually if you no longer need it.", path.display()));
+                    output::warning(&format!(
+                        "Project directory '{}' was not deleted. You may want to delete it manually if you no longer need it.",
+                        path.display()
+                    ));
                 }
 
                 return Ok(());
@@ -34,7 +36,9 @@ pub fn run(name: &str) -> anyhow::Result<()> {
         }
         None => {
             if !registry.projects.is_empty() {
-                output::error("No project with this name found in the registry. Here are the registered projects:");
+                output::error(
+                    "No project with this name found in the registry. Here are the registered projects:",
+                );
                 for (name, _) in registry.projects {
                     output::info(&format!("{}", name));
                 }
@@ -42,8 +46,9 @@ pub fn run(name: &str) -> anyhow::Result<()> {
                 return Ok(());
             }
 
-            return Err(anyhow::anyhow!("No project with this name found in the registry."));
+            return Err(anyhow::anyhow!(
+                "No project with this name found in the registry."
+            ));
         }
     }
-
 }

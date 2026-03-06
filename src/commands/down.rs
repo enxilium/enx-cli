@@ -1,7 +1,7 @@
 //! The `enx down` command — tear down the project environment.
 
-use crate::config;
 use super::run::{collect_env_vars, execute_command};
+use crate::config;
 
 pub fn run() -> anyhow::Result<()> {
     let current_dir = std::env::current_dir()?;
@@ -17,17 +17,22 @@ pub fn run() -> anyhow::Result<()> {
                 down_config.windows.as_ref().map(|p| &p.steps)
             } else {
                 None
-            }.unwrap_or(&down_config.steps);
+            }
+            .unwrap_or(&down_config.steps);
 
             for command in steps {
                 execute_command(&command, &current_dir, &env)?;
             }
 
             return Ok(());
-        } 
+        }
 
-        anyhow::bail!("Could not parse down configuration. Please check the enx.toml file to ensure it is not corrupted.");
+        anyhow::bail!(
+            "Could not parse down configuration. Please check the enx.toml file to ensure it is not corrupted."
+        );
     }
 
-    anyhow::bail!("No project configuration found in the current directory. Are you sure you're in the right project?")
+    anyhow::bail!(
+        "No project configuration found in the current directory. Are you sure you're in the right project?"
+    )
 }

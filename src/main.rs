@@ -1,8 +1,8 @@
-mod output;
 mod cli;
-mod shell;
 mod commands;
 mod config;
+mod output;
+mod shell;
 
 use clap::Parser;
 
@@ -14,15 +14,15 @@ fn main() {
         Err(e) => {
             if matches!(
                 e.kind(),
-                clap::error::ErrorKind::InvalidSubcommand
-                    | clap::error::ErrorKind::UnknownArgument
+                clap::error::ErrorKind::InvalidSubcommand | clap::error::ErrorKind::UnknownArgument
             ) {
                 let raw_args: Vec<String> = std::env::args().skip(1).collect();
 
                 if let Some(task_name) = raw_args.first() {
                     let task_args = &raw_args[1..];
 
-                    if let Err(e) = commands::run::run(Some(task_name.as_str()), task_args.to_vec()) {
+                    if let Err(e) = commands::run::run(Some(task_name.as_str()), task_args.to_vec())
+                    {
                         output::error(&format!("{:?}", e));
                         std::process::exit(1);
                     }
@@ -59,6 +59,6 @@ fn dispatch(cli: cli::Cli) -> anyhow::Result<()> {
             output::warning("This command has not been implemented yet.");
         }
     }
-    
+
     Ok(())
 }

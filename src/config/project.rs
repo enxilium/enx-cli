@@ -25,7 +25,7 @@ pub struct ProjectInfo {
 #[derive(Debug, Deserialize)]
 pub struct EnvConfig {
     #[serde(flatten)]
-    pub environments: Option<HashMap<String, String>>
+    pub environments: Option<HashMap<String, String>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -77,8 +77,9 @@ impl EnvConfig {
             .get(env_name)
             .with_context(|| format!("environment '{env_name}' is not defined under [env]"))?;
 
-        dotenv::from_path(env_file_path)
-            .with_context(|| format!("failed to load environment variables from '{env_file_path}'"))?;
+        dotenv::from_path(env_file_path).with_context(|| {
+            format!("failed to load environment variables from '{env_file_path}'")
+        })?;
 
         // Collect all environment variables (dotenv::from_path loads them into the current process)
         let vars = std::env::vars().collect();

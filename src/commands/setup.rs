@@ -11,7 +11,9 @@ pub fn run() -> anyhow::Result<()> {
     let mut global_config = config::global::GlobalConfig::load_from_file(&global_path)?;
 
     if global_config.is_setup_complete() {
-        output::warning("Setup has already been completed. Note that proceeding will overwrite your previous settings.");
+        output::warning(
+            "Setup has already been completed. Note that proceeding will overwrite your previous settings.",
+        );
     }
 
     output::info("Welcome to the enx setup! Let's get you configured.");
@@ -38,7 +40,9 @@ pub fn run() -> anyhow::Result<()> {
     initialize_shell()?;
 
     // Save the configuration
-    global_config.defaults = Some(config::global::DefaultsConfig { projects_dir: Some(final_projects_dir) });
+    global_config.defaults = Some(config::global::DefaultsConfig {
+        projects_dir: Some(final_projects_dir),
+    });
     global_config.is_configured = true;
 
     let toml_string = toml::to_string_pretty(&global_config)?;
@@ -63,7 +67,10 @@ fn initialize_shell() -> anyhow::Result<()> {
     let source_line = source_line(&shell, &script_path);
     ensure_source_line(&rc_path, &source_line)?;
 
-    output::info(&format!("Shell integration installed for {shell} ({})", rc_path.display()));
+    output::info(&format!(
+        "Shell integration installed for {shell} ({})",
+        rc_path.display()
+    ));
 
     Ok(())
 }
@@ -95,7 +102,8 @@ fn detect_shell() -> anyhow::Result<String> {
 }
 
 fn shell_rc_path(shell: &str) -> anyhow::Result<PathBuf> {
-    let home = dirs::home_dir().ok_or_else(|| anyhow::anyhow!("could not determine home directory"))?;
+    let home =
+        dirs::home_dir().ok_or_else(|| anyhow::anyhow!("could not determine home directory"))?;
 
     let path = match shell {
         "bash" => home.join(".bashrc"),

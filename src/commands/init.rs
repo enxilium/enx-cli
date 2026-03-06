@@ -1,9 +1,9 @@
 //! The `enx init` command. Used to initialize a new project and add it to the registry.
 
-use std::path::PathBuf;
 use crate::config;
 use crate::output;
 use same_file::is_same_file;
+use std::path::PathBuf;
 
 /// Generate a default `enx.toml` with the project name filled in and all
 /// sections present but empty.

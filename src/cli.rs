@@ -27,35 +27,35 @@ pub enum Commands {
 
     /// Starts the current project as defined per-project. Must be inside a registered project directory.
     Start,
-    
+
     /// Stops the current project as defined per-project. Must be inside a registered project directory.
     Stop,
-    
+
     /// Displays active diagnostic information about the project.
     Doctor,
-    
+
     /// Lists all registered projects.
     Projects,
-    
+
     /// Initializes a new project, adding it to the registry and creating an enx.toml file with default settings. Can be run anywhere.
     Init {
         /// Optional path parameter. Defaults to current directory.
         path: Option<PathBuf>,
     },
-    
+
     /// Removes a project from the registry. Can choose whether to also delete the directory from filesystem.
     Remove {
         /// Name of the project to remove from the registry.
         name: String,
     },
-    
+
     /// Clones a remote repository and adds it to the registry.
     Clone {
         repo: String,
         /// Optional path parameter to clone to. Defaults to project directory in global settings.
         path: Option<PathBuf>,
     },
-    
+
     /// Switches to a different environment in the current project. Environments are defined in the project's enx.toml file and can represent different configurations, e.g. for development, staging, production, etc.
     /// If no environment name is provided, lists all available environments.
     Env {
@@ -64,9 +64,7 @@ pub enum Commands {
     },
 
     /// Opens a file, directory, or URL associated with the project. The target is defined in the project's enx.toml file under the [open] section.
-    Open {
-        target: String
-    },
+    Open { target: String },
 
     /// Shows current project's status.
     Status,
@@ -79,9 +77,9 @@ pub enum Commands {
 
         /// Optional additional arguments to pass to the task command. Depends on task.
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
-        args: Vec<String>
+        args: Vec<String>,
     },
 
     /// Performs initial setup for enx, including creating global configuration and setting up shell integrations. Should be run once after installing enx.
-    Setup
+    Setup,
 }

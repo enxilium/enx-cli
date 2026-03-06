@@ -5,7 +5,8 @@ pub mod registry;
 use std::path::PathBuf;
 
 pub fn config_dir() -> anyhow::Result<PathBuf> {
-    let home_dir = dirs::home_dir().ok_or_else(|| anyhow::anyhow!("Could not determine home directory"))?;
+    let home_dir =
+        dirs::home_dir().ok_or_else(|| anyhow::anyhow!("Could not determine home directory"))?;
     Ok(home_dir.join(".config").join("enx"))
 }
 

@@ -7,10 +7,7 @@ use std::path::PathBuf;
 #[derive(Debug)]
 pub enum Finalizer {
     Cd(PathBuf),
-    SetEnv {
-        key: String,
-        value: String
-    }
+    SetEnv { key: String, value: String },
 }
 
 impl fmt::Display for Finalizer {
@@ -24,7 +21,7 @@ impl fmt::Display for Finalizer {
 
 pub fn write_finalizers(finalizer: &[Finalizer]) -> anyhow::Result<()> {
     // &[x] is a borrowed slice, a borrowed view into a continguous sequence of x (e.g. Vector, array, etc.)
-    // Idiomatic to String vs. &str or PathBuf vs. &Path 
+    // Idiomatic to String vs. &str or PathBuf vs. &Path
 
     let path = match std::env::var("ENX_FINALIZER_FILE") {
         Ok(p) => PathBuf::from(p),

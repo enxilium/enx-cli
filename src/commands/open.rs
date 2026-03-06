@@ -1,7 +1,7 @@
 //! The `enx open` command — open a project-defined target.
 
-use crate::config;
 use super::run::{collect_env_vars, execute_command};
+use crate::config;
 
 pub fn run(target: &str) -> anyhow::Result<()> {
     let current_dir = std::env::current_dir()?;
@@ -16,11 +16,18 @@ pub fn run(target: &str) -> anyhow::Result<()> {
                 }
             }
             // If we reach this point, it means we didn't find a matching target in the configuration.
-            anyhow::bail!("No open configuration found for target '{}'. Please check the enx.toml file to ensure it is defined correctly.", target);
-        } 
+            anyhow::bail!(
+                "No open configuration found for target '{}'. Please check the enx.toml file to ensure it is defined correctly.",
+                target
+            );
+        }
 
-        anyhow::bail!("Could not parse open configuration. Please check the enx.toml file to ensure it is not corrupted.");
+        anyhow::bail!(
+            "Could not parse open configuration. Please check the enx.toml file to ensure it is not corrupted."
+        );
     }
 
-    anyhow::bail!("No project configuration found in the current directory. Are you sure you're in the right project?")
+    anyhow::bail!(
+        "No project configuration found in the current directory. Are you sure you're in the right project?"
+    )
 }

@@ -1,13 +1,13 @@
 //! Project registry - list of all known projects and their paths.
 //! This is used to quickly find a project by name and get its path.
 
-use std::path::{Path, PathBuf};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use serde::{Serialize, Deserialize};
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Registry {
-    pub projects: HashMap<String, PathBuf>
+    pub projects: HashMap<String, PathBuf>,
 }
 
 impl Registry {
@@ -15,7 +15,9 @@ impl Registry {
     pub fn load_from_file(path: &Path) -> anyhow::Result<Self> {
         if !path.exists() {
             // If the registry file doesn't exist, return an empty registry
-            return Ok(Registry { projects: HashMap::new() });
+            return Ok(Registry {
+                projects: HashMap::new(),
+            });
         }
 
         let content = std::fs::read_to_string(path)?;
@@ -27,7 +29,7 @@ impl Registry {
     /// Save the registry to a given file path.
     pub fn save_to_file(&self, path: &Path) -> anyhow::Result<()> {
         let content = toml::to_string_pretty(self)?;
-        
+
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent)?;
         }

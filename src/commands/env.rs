@@ -28,12 +28,11 @@ pub fn run(query: Option<&str>) -> anyhow::Result<()> {
             // Switch to the specified environment
             let env = env_config.get_env_vars(env_name)?;
 
-            let mut finalizers: Vec<Finalizer> = env.iter()
-                .map(|(key, value)| {
-                    Finalizer::SetEnv {
-                        key: key.clone(),
-                        value: value.clone(),
-                    }
+            let mut finalizers: Vec<Finalizer> = env
+                .iter()
+                .map(|(key, value)| Finalizer::SetEnv {
+                    key: key.clone(),
+                    value: value.clone(),
                 })
                 .collect();
 

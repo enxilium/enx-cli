@@ -2,10 +2,10 @@
 use std::path::PathBuf;
 use std::process::Command;
 
+use super::init;
+use crate::config;
 use crate::config::global;
 use crate::output;
-use crate::config;
-use super::init;
 
 pub fn run(repo: &str, path: Option<PathBuf>) -> anyhow::Result<()> {
     let mut cmd = Command::new("git");
@@ -24,7 +24,9 @@ pub fn run(repo: &str, path: Option<PathBuf>) -> anyhow::Result<()> {
     let status = cmd.status()?;
 
     if !status.success() {
-        return Err(anyhow::anyhow!("Failed to clone repository. Please make sure git is installed properly and you are authorized."));
+        return Err(anyhow::anyhow!(
+            "Failed to clone repository. Please make sure git is installed properly and you are authorized."
+        ));
     }
 
     output::success("Repository cloned successfully. Running init...");
