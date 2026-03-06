@@ -18,7 +18,7 @@ pub fn run(name: &str) -> anyhow::Result<()> {
                     .interact()?;
 
                 if should_delete {
-                    std::fs::remove_dir_all(&path)?;
+                    std::fs::remove_dir_all(path)?;
                     output::success(&format!("Project directory '{}' deleted.", path.display()));
                 } else {
                     output::warning(&format!(
@@ -40,15 +40,15 @@ pub fn run(name: &str) -> anyhow::Result<()> {
                     "No project with this name found in the registry. Here are the registered projects:",
                 );
                 for (name, _) in registry.projects {
-                    output::info(&format!("{}", name));
+                    output::info(&name.to_string());
                 }
 
                 return Ok(());
             }
 
-            return Err(anyhow::anyhow!(
+            Err(anyhow::anyhow!(
                 "No project with this name found in the registry."
-            ));
+            ))
         }
     }
 }

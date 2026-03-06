@@ -21,7 +21,7 @@ pub fn run() -> anyhow::Result<()> {
             .unwrap_or(&down_config.steps);
 
             for command in steps {
-                execute_command(&command, &current_dir, &env)?;
+                execute_command(command, &current_dir, &env)?;
             }
 
             return Ok(());

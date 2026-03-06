@@ -64,7 +64,7 @@ pub fn run(path: Option<PathBuf>) -> anyhow::Result<()> {
     }
 
     for (name, path) in &registry.projects {
-        if is_same_file(project_path.as_path(), &path)? {
+        if is_same_file(project_path.as_path(), path)? {
             return Err(anyhow::anyhow!(
                 "This directory is already registered as project '{}'",
                 name
