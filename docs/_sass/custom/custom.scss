@@ -1,9 +1,12 @@
 // Custom style overrides for enx documentation.
 // Placed here so we never touch the theme source directly.
+//
+// Note: color scheme variables ($ctp-*) are not in scope here,
+// so we use raw Catppuccin Mocha hex values directly.
 
 // Slightly softer horizontal rules
 hr {
-    border-color: $ctp-surface1;
+    border-color: #45475a; // Surface1
 }
 
 // Inline code in prose — give it a visible background
@@ -21,24 +24,24 @@ code {
 }
 
 .feature-card {
-    background: $ctp-surface0;
-    border: 1px solid $ctp-surface1;
+    background: #313244; // Surface0
+    border: 1px solid #45475a; // Surface1
     border-radius: 8px;
     padding: 1.25rem;
     transition: border-color 0.2s;
 
     &:hover {
-        border-color: $ctp-lavender;
+        border-color: #b4befe; // Lavender
     }
 
     h3 {
         margin-top: 0;
-        color: $ctp-lavender;
+        color: #b4befe; // Lavender
         font-size: 1rem;
     }
 
     p {
-        color: $ctp-subtext0;
+        color: #a6adc8; // Subtext0
         font-size: 0.9rem;
         margin-bottom: 0;
     }
