@@ -171,6 +171,23 @@ fn initialize_shell() -> anyhow::Result<()> {
 }
 
 fn detect_shell() -> anyhow::Result<String> {
+    // Check shell-specific environment variables first (detects the current running shell)
+    if std::env::var("FISH_VERSION").is_ok() {
+        return Ok("fish".to_string());
+    }
+    if std::env::var("ZSH_VERSION").is_ok() {
+        return Ok("zsh".to_string());
+    }
+    if std::env::var("BASH_VERSION").is_ok() {
+        return Ok("bash".to_string());
+    }
+    if std::env::var("POWERSHELL_DISTRIBUTION_CHANNEL").is_ok()
+        || std::env::var("PSModulePath").is_ok()
+    {
+        return Ok("pwsh".to_string());
+    }
+
+    // Fallback to $SHELL (login shell default)
     let shell_path = std::env::var("SHELL").unwrap_or_default();
     let shell_name = std::path::Path::new(&shell_path)
         .file_name()
