@@ -1,0 +1,61 @@
+// Catppuccin Mocha color scheme for just-the-docs
+// Based on https://github.com/catppuccin/catppuccin — Mocha flavor
+//
+// Extends the built-in dark scheme, overriding colors to use the
+// Catppuccin Mocha palette for a warm, low-contrast dark theme.
+
+@import "./color_schemes/dark";
+
+// ── Catppuccin Mocha palette tokens ──────────────────────────────
+$ctp-rosewater: #f5e0dc;
+$ctp-flamingo: #f2cdcd;
+$ctp-pink: #f5c2e7;
+$ctp-mauve: #cba6f7;
+$ctp-red: #f38ba8;
+$ctp-maroon: #eba0ac;
+$ctp-peach: #fab387;
+$ctp-yellow: #f9e2af;
+$ctp-green: #a6e3a1;
+$ctp-teal: #94e2d5;
+$ctp-sky: #89dceb;
+$ctp-sapphire: #74c7ec;
+$ctp-blue: #89b4fa;
+$ctp-lavender: #b4befe;
+
+$ctp-text: #cdd6f4;
+$ctp-subtext1: #bac2de;
+$ctp-subtext0: #a6adc8;
+$ctp-overlay2: #9399b2;
+$ctp-overlay1: #7f849c;
+$ctp-overlay0: #6c7086;
+$ctp-surface2: #585b70;
+$ctp-surface1: #45475a;
+$ctp-surface0: #313244;
+$ctp-base: #1e1e2e;
+$ctp-mantle: #181825;
+$ctp-crust: #11111b;
+
+// ── Page ─────────────────────────────────────────────────────────
+$body-background-color: $ctp-base;
+$body-text-color: $ctp-text;
+$body-heading-color: $ctp-lavender;
+$search-background-color: $ctp-surface0;
+
+// ── Links ────────────────────────────────────────────────────────
+$link-color: $ctp-lavender;
+$link-hover-color: $ctp-blue;
+
+// ── Sidebar / Navigation ─────────────────────────────────────────
+$sidebar-color: $ctp-mantle;
+$nav-child-link-color: $ctp-subtext0;
+$search-result-preview-color: $ctp-subtext1;
+
+// ── Code ─────────────────────────────────────────────────────────
+$code-background-color: $ctp-surface0;
+$feedback-color: $ctp-overlay0;
+
+// ── Borders ──────────────────────────────────────────────────────
+$border-color: $ctp-surface1;
+
+// ── Buttons ──────────────────────────────────────────────────────
+$btn-primary-color: $ctp-mauve;

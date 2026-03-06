@@ -1,0 +1,9 @@
+source "https://rubygems.org"
+
+# GitHub Pages gem — bundles Jekyll and all supported plugins.
+# When deploying to GitHub Pages, this is the only gem you need.
+gem "github-pages", group: :jekyll_plugins
+
+# The just-the-docs theme (used via remote_theme on GH Pages,
+# but listed here so `bundle exec jekyll serve` works locally).
+gem "just-the-docs"

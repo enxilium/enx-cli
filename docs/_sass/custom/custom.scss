@@ -1,0 +1,45 @@
+// Custom style overrides for enx documentation.
+// Placed here so we never touch the theme source directly.
+
+// Slightly softer horizontal rules
+hr {
+    border-color: $ctp-surface1;
+}
+
+// Inline code in prose — give it a visible background
+code {
+    padding: 0.15em 0.35em;
+    border-radius: 4px;
+}
+
+// Feature cards on the landing page
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.25rem;
+    margin: 1.5rem 0;
+}
+
+.feature-card {
+    background: $ctp-surface0;
+    border: 1px solid $ctp-surface1;
+    border-radius: 8px;
+    padding: 1.25rem;
+    transition: border-color 0.2s;
+
+    &:hover {
+        border-color: $ctp-lavender;
+    }
+
+    h3 {
+        margin-top: 0;
+        color: $ctp-lavender;
+        font-size: 1rem;
+    }
+
+    p {
+        color: $ctp-subtext0;
+        font-size: 0.9rem;
+        margin-bottom: 0;
+    }
+}
