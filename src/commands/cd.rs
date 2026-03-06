@@ -17,6 +17,13 @@ pub fn run(name: &str) -> anyhow::Result<()> {
                 );
             }
 
+            if std::env::var("ENX_FINALIZER_FILE").is_err() {
+                output::warning(
+                    "shell integration is not active. Make sure you have restarted your shell after running `enx setup`.",
+                );
+                return Ok(());
+            }
+
             crate::shell::write_finalizers(&[Finalizer::Cd(path.clone())])?;
 
             Ok(())

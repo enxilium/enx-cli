@@ -6,6 +6,7 @@ use super::init;
 use crate::config;
 use crate::config::global;
 use crate::output;
+use crate::util;
 
 /// Extract the repository name from a Git URL.
 ///
@@ -29,12 +30,17 @@ pub fn run(repo: &str, path: Option<PathBuf>) -> anyhow::Result<()> {
         let global_config = global::GlobalConfig::load_from_file(&config::global_config_path()?)?;
 
         let base = match global_config.projects_dir() {
-            Some(dir) => PathBuf::from(dir),
+            Some(dir) => util::expand_tilde(&dir),
             None => std::env::current_dir()?,
         };
 
         base.join(repo_name_from_url(repo))
     };
+
+    // Ensure the parent directory exists so git can create the clone target.
+    if let Some(parent) = clone_path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
 
     let mut cmd = Command::new("git");
     cmd.args(["clone", repo]);

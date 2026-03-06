@@ -6,6 +6,7 @@ use crate::commands::init;
 use crate::commands::shell_init;
 use crate::config;
 use crate::output;
+use crate::util;
 
 pub fn run() -> anyhow::Result<()> {
     let global_path = config::global_config_path()?;
@@ -37,6 +38,13 @@ pub fn run() -> anyhow::Result<()> {
     } else {
         projects_dir
     };
+
+    // Expand ~ to the real home path so file operations work correctly.
+    let expanded_dir = util::expand_tilde(&final_projects_dir);
+    let final_projects_dir = expanded_dir
+        .to_str()
+        .unwrap_or(&final_projects_dir)
+        .to_string();
 
     // Offer to auto-index existing subdirectories as projects
     auto_index_projects(&final_projects_dir)?;
@@ -169,7 +177,13 @@ fn shell_rc_path(shell: &str) -> anyhow::Result<PathBuf> {
 
     let path = match shell {
         "bash" => home.join(".bashrc"),
-        "zsh" => home.join(".zshrc"),
+        "zsh" => {
+            // Respect ZDOTDIR if set — zsh reads .zshrc from there instead of $HOME.
+            match std::env::var("ZDOTDIR") {
+                Ok(zdotdir) if !zdotdir.is_empty() => PathBuf::from(zdotdir).join(".zshrc"),
+                _ => home.join(".zshrc"),
+            }
+        }
         "fish" => home.join(".config/fish/config.fish"),
         "pwsh" => {
             if cfg!(target_os = "windows") {

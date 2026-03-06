@@ -3,6 +3,7 @@ mod commands;
 mod config;
 mod output;
 mod shell;
+mod util;
 
 use clap::Parser;
 
