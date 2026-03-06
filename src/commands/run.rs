@@ -70,11 +70,12 @@ pub fn collect_env_vars(config: &config::project::ProjectConfig) -> HashMap<Stri
     let mut vars = HashMap::new();
 
     if let Some(env_config) = &config.env
-        && let Some(environments) = &env_config.environments {
-            for (key, value) in environments {
-                vars.insert(key.clone(), value.clone());
-            }
+        && let Some(environments) = &env_config.environments
+    {
+        for (key, value) in environments {
+            vars.insert(key.clone(), value.clone());
         }
+    }
 
     vars.insert("ENX_PROJECT".to_string(), config.project.name.clone());
 
@@ -113,27 +114,29 @@ fn list_tasks(project_dir: &Path) -> anyhow::Result<()> {
     // Load and display project tasks
     if let Ok(project_config) = config::project::ProjectConfig::load_from_file(project_dir)
         && let Some(tasks) = &project_config.tasks
-            && !tasks.is_empty() {
-                has_tasks = true;
-                output::header("Project Tasks:");
-                for (name, task) in tasks {
-                    print_task_entry(name, task);
-                }
-                println!();
-            }
+        && !tasks.is_empty()
+    {
+        has_tasks = true;
+        output::header("Project Tasks:");
+        for (name, task) in tasks {
+            print_task_entry(name, task);
+        }
+        println!();
+    }
 
     // Load and display global tasks
     if let Ok(global_path) = config::global_config_path()
         && let Ok(global_config) = config::global::GlobalConfig::load_from_file(&global_path)
-            && let Some(tasks) = &global_config.tasks
-                && !tasks.is_empty() {
-                    has_tasks = true;
-                    output::header("Global Tasks:");
-                    for (name, task) in tasks {
-                        print_task_entry(name, task);
-                    }
-                    println!();
-                }
+        && let Some(tasks) = &global_config.tasks
+        && !tasks.is_empty()
+    {
+        has_tasks = true;
+        output::header("Global Tasks:");
+        for (name, task) in tasks {
+            print_task_entry(name, task);
+        }
+        println!();
+    }
 
     if !has_tasks {
         output::warning(
@@ -145,9 +148,7 @@ fn list_tasks(project_dir: &Path) -> anyhow::Result<()> {
 }
 
 fn print_task_entry(name: &str, task: &TaskConfig) {
-    let description = task
-        .description.as_deref()
-        .unwrap_or("(no description)");
+    let description = task.description.as_deref().unwrap_or("(no description)");
     output::detail(&format!(
         "{}: {} | runs: {}",
         name.bold(),
