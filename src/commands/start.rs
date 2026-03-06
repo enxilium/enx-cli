@@ -2,6 +2,7 @@
 
 use super::run::{collect_env_vars, execute_command};
 use crate::config;
+use crate::output;
 
 pub fn run() -> anyhow::Result<()> {
     let current_dir = std::env::current_dir()?;
@@ -9,6 +10,7 @@ pub fn run() -> anyhow::Result<()> {
     if let Ok(project_config) = config::project::ProjectConfig::load_from_file(&current_dir) {
         let env = collect_env_vars(&project_config);
         if let Some(start_config) = project_config.start {
+            output::info(&format!("Starting {}...", project_config.project.name));
             for command in start_config.commands {
                 execute_command(&command, &current_dir, &env)?;
             }

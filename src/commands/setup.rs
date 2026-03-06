@@ -12,15 +12,18 @@ pub fn run() -> anyhow::Result<()> {
     let global_path = config::global_config_path()?;
     let mut global_config = config::global::GlobalConfig::load_from_file(&global_path)?;
 
+    // ── Banner ───────────────────────────────────────────────────────
+    output::banner();
+
     if global_config.is_setup_complete() {
         output::warning(
             "Setup has already been completed. Note that proceeding will overwrite your previous settings.",
         );
+        output::newline();
     }
 
-    output::info("Welcome to the enx setup! Let's get you configured.");
-
-    // Ask for projects directory
+    // ── Projects directory ───────────────────────────────────────────
+    output::header("Project Directory");
     let default_dir = dirs::home_dir()
         .unwrap_or_else(|| PathBuf::from("."))
         .join("enx-projects")
@@ -28,8 +31,8 @@ pub fn run() -> anyhow::Result<()> {
         .unwrap()
         .to_string();
 
-    let projects_dir: String = Input::new()
-        .with_prompt("Where would you like to store your projects? (You can change this later in the config file if needed).")
+    let projects_dir: String = Input::with_theme(&output::theme())
+        .with_prompt("Where would you like to store your projects?")
         .default(default_dir.clone())
         .interact_text()?;
 
@@ -46,12 +49,18 @@ pub fn run() -> anyhow::Result<()> {
         .unwrap_or(&final_projects_dir)
         .to_string();
 
-    // Offer to auto-index existing subdirectories as projects
+    output::newline();
+
+    // ── Auto-index ──────────────────────────────────────────────────
     auto_index_projects(&final_projects_dir)?;
 
+    // ── Shell integration ───────────────────────────────────────────
+    output::header("Shell Integration");
     initialize_shell()?;
 
-    // Save the configuration
+    output::newline();
+
+    // ── Save & finish ───────────────────────────────────────────────
     global_config.defaults = Some(config::global::DefaultsConfig {
         projects_dir: Some(final_projects_dir),
     });
@@ -60,7 +69,7 @@ pub fn run() -> anyhow::Result<()> {
     let toml_string = toml::to_string_pretty(&global_config)?;
     std::fs::write(global_path, toml_string)?;
 
-    output::success("Setup complete! You can now start using enx to manage your projects.");
+    output::success("Setup complete! You're all set.");
 
     Ok(())
 }
@@ -89,22 +98,30 @@ fn auto_index_projects(projects_dir: &str) -> anyhow::Result<()> {
         .filter_map(|e| e.file_name().to_str().map(String::from))
         .collect();
 
+    output::header("Auto-Index Projects");
     output::info(&format!(
-        "Found {} existing subdirector{} in '{}':",
+        "Found {} subdirector{} in '{}':",
         names.len(),
         if names.len() == 1 { "y" } else { "ies" },
         projects_dir
     ));
-    for name in &names {
-        output::detail(name);
+
+    let last = names.len().saturating_sub(1);
+    for (i, name) in names.iter().enumerate() {
+        if i == last {
+            output::detail_last(name);
+        } else {
+            output::detail(name);
+        }
     }
 
-    let should_index = Confirm::new()
+    let should_index = Confirm::with_theme(&output::theme())
         .with_prompt("Register all of them as enx projects?")
         .default(true)
         .interact()?;
 
     if !should_index {
+        output::newline();
         return Ok(());
     }
 
@@ -113,18 +130,24 @@ fn auto_index_projects(projects_dir: &str) -> anyhow::Result<()> {
         let name = entry.file_name().to_str().unwrap_or("unknown").to_string();
 
         match init::run(Some(dir.clone())) {
-            Ok(()) => {}
+            Ok(()) => output::step_ok(&name),
             Err(e) => {
+                output::step_fail(&name);
                 output::warning(&format!("skipping '{}': {}", name, e));
             }
         }
     }
+
+    output::newline();
 
     Ok(())
 }
 
 fn initialize_shell() -> anyhow::Result<()> {
     let shell = detect_shell()?;
+
+    let sp = output::spinner(&format!("Installing shell integration for {shell}..."));
+
     let script = shell_init::generate_script(&shell)?;
 
     let shell_dir = config::config_dir()?.join("shell");
@@ -137,7 +160,9 @@ fn initialize_shell() -> anyhow::Result<()> {
     let source_line = source_line(&shell, &script_path);
     ensure_source_line(&rc_path, &source_line)?;
 
-    output::info(&format!(
+    sp.finish_and_clear();
+
+    output::step_ok(&format!(
         "Shell integration installed for {shell} ({})",
         rc_path.display()
     ));

@@ -1,7 +1,8 @@
 //! The `enx down` command — tear down the project environment.
 
-use super::run::{collect_env_vars, execute_command};
+use super::run::{collect_env_vars, execute_command_with_spinner};
 use crate::config;
+use crate::output;
 
 pub fn run() -> anyhow::Result<()> {
     let current_dir = std::env::current_dir()?;
@@ -9,6 +10,8 @@ pub fn run() -> anyhow::Result<()> {
     if let Ok(project_config) = config::project::ProjectConfig::load_from_file(&current_dir) {
         let env = collect_env_vars(&project_config);
         if let Some(down_config) = project_config.down {
+            output::info(&format!("Tearing down {}...", project_config.project.name));
+
             let steps = if cfg!(target_os = "linux") {
                 down_config.linux.as_ref().map(|p| &p.steps)
             } else if cfg!(target_os = "macos") {
@@ -21,9 +24,10 @@ pub fn run() -> anyhow::Result<()> {
             .unwrap_or(&down_config.steps);
 
             for command in steps {
-                execute_command(command, &current_dir, &env)?;
+                execute_command_with_spinner(command, &current_dir, &env)?;
             }
 
+            output::success("Tear-down complete!");
             return Ok(());
         }
 

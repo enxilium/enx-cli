@@ -7,6 +7,7 @@ use crate::config;
 use crate::config::global;
 use crate::output;
 use crate::util;
+use console::style;
 
 /// Extract the repository name from a Git URL.
 ///
@@ -42,19 +43,28 @@ pub fn run(repo: &str, path: Option<PathBuf>) -> anyhow::Result<()> {
         std::fs::create_dir_all(parent)?;
     }
 
-    let mut cmd = Command::new("git");
-    cmd.args(["clone", repo]);
-    cmd.arg(&clone_path);
+    let sp = output::spinner(&format!("Cloning {} ...", style(repo).color256(116)));
 
-    let status = cmd.status()?;
+    let result = Command::new("git")
+        .args(["clone", repo])
+        .arg(&clone_path)
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::piped())
+        .output();
 
-    if !status.success() {
-        return Err(anyhow::anyhow!(
-            "Failed to clone repository. Please make sure git is installed properly and you are authorized."
-        ));
+    match result {
+        Ok(out) if out.status.success() => {
+            sp.finish_and_clear();
+            output::step_ok("Repository cloned");
+        }
+        _ => {
+            sp.finish_and_clear();
+            output::step_fail("Clone failed");
+            anyhow::bail!(
+                "failed to clone repository. Make sure git is installed and you are authorized."
+            );
+        }
     }
-
-    output::success("Repository cloned successfully. Running init...");
 
     init::run(Some(clone_path))?;
 

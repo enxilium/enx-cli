@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 use std::path::Path;
 
-use colored::Colorize;
+use console::style;
 
 use crate::config;
 use crate::config::project::TaskConfig;
@@ -108,6 +108,50 @@ pub fn execute_command(
     Ok(())
 }
 
+/// Run a command with a spinner that resolves to ✓ or ✗.
+///
+/// Unlike [`execute_command`], stdout and stderr are captured (not
+/// inherited) so the spinner animation isn't disrupted by subprocess
+/// output. On failure the captured stderr is printed below the ✗ line.
+pub fn execute_command_with_spinner(
+    command: &str,
+    working_dir: &Path,
+    env_vars: &HashMap<String, String>,
+) -> anyhow::Result<()> {
+    let sp = crate::output::spinner(command);
+
+    let (shell, flag) = if cfg!(target_os = "windows") {
+        ("cmd", "/C")
+    } else {
+        ("sh", "-c")
+    };
+
+    let output = std::process::Command::new(shell)
+        .arg(flag)
+        .arg(command)
+        .current_dir(working_dir)
+        .envs(env_vars)
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .output()?;
+
+    sp.finish_and_clear();
+
+    if output.status.success() {
+        crate::output::step_ok(command);
+    } else {
+        crate::output::step_fail(command);
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        if !stderr.trim().is_empty() {
+            eprintln!("{}", stderr.trim());
+        }
+        let code = output.status.code().unwrap_or(-1);
+        anyhow::bail!("command '{}' exited with code {}", command, code);
+    }
+
+    Ok(())
+}
+
 fn list_tasks(project_dir: &Path) -> anyhow::Result<()> {
     let mut has_tasks = false;
 
@@ -117,11 +161,13 @@ fn list_tasks(project_dir: &Path) -> anyhow::Result<()> {
         && !tasks.is_empty()
     {
         has_tasks = true;
-        output::header("Project Tasks:");
-        for (name, task) in tasks {
-            print_task_entry(name, task);
+        output::header("Project Tasks");
+        let items: Vec<_> = tasks.iter().collect();
+        let last = items.len().saturating_sub(1);
+        for (i, (name, task)) in items.iter().enumerate() {
+            print_task_entry(name, task, i == last);
         }
-        println!();
+        output::newline();
     }
 
     // Load and display global tasks
@@ -131,11 +177,13 @@ fn list_tasks(project_dir: &Path) -> anyhow::Result<()> {
         && !tasks.is_empty()
     {
         has_tasks = true;
-        output::header("Global Tasks:");
-        for (name, task) in tasks {
-            print_task_entry(name, task);
+        output::header("Global Tasks");
+        let items: Vec<_> = tasks.iter().collect();
+        let last = items.len().saturating_sub(1);
+        for (i, (name, task)) in items.iter().enumerate() {
+            print_task_entry(name, task, i == last);
         }
-        println!();
+        output::newline();
     }
 
     if !has_tasks {
@@ -147,12 +195,14 @@ fn list_tasks(project_dir: &Path) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn print_task_entry(name: &str, task: &TaskConfig) {
+fn print_task_entry(name: &str, task: &TaskConfig, is_last: bool) {
     let description = task.description.as_deref().unwrap_or("(no description)");
-    output::detail(&format!(
-        "{}: {} | runs: {}",
-        name.bold(),
-        description,
-        task.command
-    ));
+    let connector = if is_last { "└─" } else { "├─" };
+    println!(
+        "  {} {} {} {}",
+        style(connector).color256(102),
+        style(name).color256(116).bold(),
+        style("─").color256(102),
+        style(description).color256(102),
+    );
 }

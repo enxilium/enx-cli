@@ -20,7 +20,7 @@ pub fn run(name: &str) -> anyhow::Result<()> {
     output::success(&format!("Project '{}' removed from the registry.", name));
 
     if project_path.exists() {
-        let should_delete = Confirm::new()
+        let should_delete = Confirm::with_theme(&output::theme())
             .with_prompt("Do you also want to delete the project directory?")
             .default(false)
             .interact()?;
