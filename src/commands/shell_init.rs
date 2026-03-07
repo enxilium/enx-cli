@@ -90,5 +90,3 @@ fn generate_zsh() -> String {
     let completions = completions_for(Shell::Zsh);
     bash_zsh_wrapper(&completions)
 }
-
-
