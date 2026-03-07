@@ -178,24 +178,20 @@ fn initialize_shell() -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Detect whether the user is running bash or zsh.
+///
+/// We only support bash-compatible shells (bash, zsh). They share the
+/// same wrapper function and source-line syntax. On Windows this will
+/// always fall through to "bash" (Git Bash).
 fn detect_shell() -> anyhow::Result<String> {
-    // Check shell-specific environment variables first (detects the current running shell)
-    if std::env::var("FISH_VERSION").is_ok() {
-        return Ok("fish".to_string());
-    }
     if std::env::var("ZSH_VERSION").is_ok() {
         return Ok("zsh".to_string());
     }
     if std::env::var("BASH_VERSION").is_ok() {
         return Ok("bash".to_string());
     }
-    if std::env::var("POWERSHELL_DISTRIBUTION_CHANNEL").is_ok()
-        || std::env::var("PSModulePath").is_ok()
-    {
-        return Ok("pwsh".to_string());
-    }
 
-    // Fallback to $SHELL (login shell default)
+    // Fallback: check $SHELL
     let shell_path = std::env::var("SHELL").unwrap_or_default();
     let shell_name = std::path::Path::new(&shell_path)
         .file_name()
@@ -203,22 +199,11 @@ fn detect_shell() -> anyhow::Result<String> {
         .unwrap_or("")
         .to_ascii_lowercase();
 
-    let detected = match shell_name.as_str() {
-        "bash" => "bash",
-        "zsh" => "zsh",
-        "fish" => "fish",
-        "pwsh" | "powershell" => "pwsh",
-        _ => {
-            // On Windows, SHELL is usually unset. Prefer pwsh as the default.
-            if cfg!(target_os = "windows") {
-                "pwsh"
-            } else {
-                "bash"
-            }
-        }
-    };
-
-    Ok(detected.to_string())
+    match shell_name.as_str() {
+        "zsh" => Ok("zsh".to_string()),
+        // Everything else (bash, unknown, Windows with no $SHELL) → bash
+        _ => Ok("bash".to_string()),
+    }
 }
 
 fn shell_rc_path(shell: &str) -> anyhow::Result<PathBuf> {
@@ -226,7 +211,6 @@ fn shell_rc_path(shell: &str) -> anyhow::Result<PathBuf> {
         dirs::home_dir().ok_or_else(|| anyhow::anyhow!("could not determine home directory"))?;
 
     let path = match shell {
-        "bash" => home.join(".bashrc"),
         "zsh" => {
             // Respect ZDOTDIR if set — zsh reads .zshrc from there instead of $HOME.
             match std::env::var("ZDOTDIR") {
@@ -234,36 +218,20 @@ fn shell_rc_path(shell: &str) -> anyhow::Result<PathBuf> {
                 _ => home.join(".zshrc"),
             }
         }
-        "fish" => home.join(".config/fish/config.fish"),
-        "pwsh" => {
-            if cfg!(target_os = "windows") {
-                home.join("Documents/PowerShell/Microsoft.PowerShell_profile.ps1")
-            } else {
-                home.join(".config/powershell/Microsoft.PowerShell_profile.ps1")
-            }
-        }
-        _ => anyhow::bail!("unsupported shell: {shell}"),
+        // bash (and Git Bash on Windows)
+        _ => home.join(".bashrc"),
     };
 
     Ok(path)
 }
 
-fn script_file_name(shell: &str) -> &'static str {
-    match shell {
-        "fish" => "init.fish",
-        "pwsh" => "init.ps1",
-        _ => "init.sh",
-    }
+fn script_file_name(_shell: &str) -> &'static str {
+    "init.sh"
 }
 
-fn source_line(shell: &str, script_path: &std::path::Path) -> String {
+fn source_line(_shell: &str, script_path: &std::path::Path) -> String {
     let rendered = script_path.display();
-
-    match shell {
-        "fish" => format!("source {rendered}"),
-        "pwsh" => format!(". \"{rendered}\""),
-        _ => format!("[ -f \"{rendered}\" ] && source \"{rendered}\""),
-    }
+    format!("[ -f \"{rendered}\" ] && source \"{rendered}\"")
 }
 
 fn ensure_source_line(rc_path: &std::path::Path, source_line: &str) -> anyhow::Result<()> {
@@ -344,7 +312,7 @@ fn ensure_binary_in_path() -> anyhow::Result<()> {
     }
 
     output::step_ok(&format!("Added {} to user PATH", bin_dir.display()));
-    output::info("Restart PowerShell for the PATH change to take effect");
+    output::info("Restart your terminal for the PATH change to take effect");
 
     Ok(())
 }

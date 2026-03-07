@@ -55,8 +55,12 @@ try {
 
     Write-Host ""
     Write-Host "setup finished"
+    Write-Host ""
     Write-Host "enx is now installed and available in your PATH"
-    Write-Host "restart your PowerShell window for the PATH change to take effect"
+    Write-Host "shell integration (enx cd, enx env) is configured for Git Bash"
+    Write-Host ""
+    Write-Host "to get started, open Git Bash and run: enx --help"
+    Write-Host "if you don't have Git Bash, install Git for Windows: https://git-scm.com"
 }
 finally {
     if (Test-Path $tmpFile) {

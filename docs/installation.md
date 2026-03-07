@@ -45,10 +45,24 @@ curl -fsSL https://raw.githubusercontent.com/enxilium/enx-cli/main/scripts/insta
 
 ---
 
-## Windows (PowerShell)
+## Windows
+
+**Prerequisite:** [Git for Windows](https://git-scm.com) (provides Git Bash).
+
+### Step 1 — Install the binary
+
+Open PowerShell and run:
 
 ```powershell
 iwr -useb https://raw.githubusercontent.com/enxilium/enx-cli/main/scripts/install.ps1 | iex
+```
+
+### Step 2 — Use enx from Git Bash
+
+Shell integration (needed for `enx cd`, `enx env`) is configured for **Git Bash**. Open Git Bash and verify:
+
+```bash
+enx --help
 ```
 
 ### What the script does
@@ -57,7 +71,11 @@ iwr -useb https://raw.githubusercontent.com/enxilium/enx-cli/main/scripts/instal
 2. Downloads the Windows binary from the latest `nightly` release
 3. Installs to `~\AppData\Local\enx\bin\enx.exe`
 4. Adds the install directory to your user `PATH` if it isn't already there
-5. Runs `enx setup`
+5. Runs `enx setup` (configures shell integration for Git Bash)
+
+{: .note }
+
+> Basic commands like `enx projects`, `enx run`, and `enx up` work from any shell (PowerShell, cmd, Git Bash). Only `enx cd` and `enx env` require Git Bash because they need to modify the parent shell's state.
 
 ### Environment variables
 
@@ -89,7 +107,7 @@ After installation, `enx setup` runs automatically. It:
 
 - Creates the global config directory (`~/.config/enx/` on Linux/macOS, `~\AppData\Roaming\enx\` on Windows)
 - Initializes `config.toml` and `registry.toml`
-- Configures shell integration for your detected shell (Bash, Zsh, Fish, or PowerShell)
+- Configures shell integration (Bash or Zsh; Git Bash on Windows)
 
 If shell integration does not take effect immediately, restart your shell or source your shell config file.
 

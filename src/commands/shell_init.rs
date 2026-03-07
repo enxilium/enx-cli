@@ -9,12 +9,13 @@ use clap_complete::Shell;
 use crate::cli::Cli;
 
 /// Build the shell wrapper and completions script for the given shell name.
+///
+/// Only bash and zsh are supported — they share the same wrapper function,
+/// just with different completions.
 pub fn generate_script(shell_name: &str) -> anyhow::Result<String> {
     let script = match shell_name {
         "bash" => generate_bash(),
         "zsh" => generate_zsh(),
-        "fish" => generate_fish(),
-        "powershell" | "pwsh" => generate_powershell(),
         _ => anyhow::bail!("unsupported shell: {shell_name}"),
     };
 
@@ -90,67 +91,4 @@ fn generate_zsh() -> String {
     bash_zsh_wrapper(&completions)
 }
 
-fn generate_fish() -> String {
-    let completions = completions_for(Shell::Fish);
 
-    format!(
-        r#"
-function enx
-    set tmpfile (mktemp /tmp/enx-finalizer.XXXXXX)
-
-    ENX_FINALIZER_FILE=$tmpfile command enx $argv
-    set exit_code $status
-
-    if test $exit_code -eq 0; and test -f $tmpfile
-        while read -l line
-            switch $line
-                case 'cd:*'
-                    cd (string replace 'cd:' '' $line)
-                case 'setenv:*'
-                    set -l pair (string replace 'setenv:' '' $line)
-                    set -l key (string split '=' $pair)[1]
-                    set -l val (string split '=' $pair)[2]
-                    set -gx $key $val
-            end
-        end < $tmpfile
-    end
-
-    rm -f $tmpfile
-    return $exit_code
-end
-
-{completions}
-"#
-    )
-}
-
-fn generate_powershell() -> String {
-    let completions = completions_for(Shell::PowerShell);
-
-    format!(
-        r#"
-function enx {{
-    $tmpfile = [System.IO.Path]::GetTempFileName()
-
-    $env:ENX_FINALIZER_FILE = $tmpfile
-    & enx.exe @args
-    $exitCode = $LASTEXITCODE
-
-    if (($exitCode -eq 0) -and (Test-Path $tmpfile)) {{
-        Get-Content $tmpfile | ForEach-Object {{
-            if ($_ -match '^cd:(.+)$') {{
-                Set-Location $Matches[1]
-            }} elseif ($_ -match '^setenv:(.+?)=(.*)$') {{
-                [System.Environment]::SetEnvironmentVariable($Matches[1], $Matches[2], 'Process')
-            }}
-        }}
-    }}
-
-    Remove-Item $tmpfile -ErrorAction SilentlyContinue
-    exit $exitCode
-}}
-
-{completions}
-"#
-    )
-}

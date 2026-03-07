@@ -32,12 +32,11 @@ A child process cannot change the parent shell's working directory. This means `
 
 When you run `enx setup`, it detects your shell and appends the appropriate wrapper function to your shell configuration file:
 
-| Shell      | Config file                  |
-| :--------- | :--------------------------- |
-| Bash       | `~/.bashrc`                  |
-| Zsh        | `~/.zshrc`                   |
-| Fish       | `~/.config/fish/config.fish` |
-| PowerShell | `$PROFILE`                   |
+| Shell              | Config file |
+| :----------------- | :---------- |
+| Bash               | `~/.bashrc` |
+| Zsh                | `~/.zshrc`  |
+| Git Bash (Windows) | `~/.bashrc` |
 
 {: .tip }
 
@@ -65,36 +64,6 @@ enx() {
     else
         command enx "$@"
     fi
-}
-```
-
-### Fish
-
-Add this to `~/.config/fish/config.fish`:
-
-```fish
-function enx
-    if test "$argv[1]" = "cd"
-        set dir (command enx cd $argv[2..])
-        and cd $dir
-    else
-        command enx $argv
-    end
-end
-```
-
-### PowerShell
-
-Add this to your PowerShell profile (`$PROFILE`):
-
-```powershell
-function enx {
-    if ($args[0] -eq "cd") {
-        $dir = & enx.exe cd @($args[1..($args.Length-1)])
-        if ($LASTEXITCODE -eq 0) { Set-Location $dir }
-    } else {
-        & enx.exe @args
-    }
 }
 ```
 
