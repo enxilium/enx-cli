@@ -120,7 +120,6 @@ Switch between them:
 
 ```sh
 enx env staging     # switches to the staging environment
-enx status          # shows current project, env, and branch
 ```
 
 ---

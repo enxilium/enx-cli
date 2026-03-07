@@ -40,5 +40,4 @@ $ enx start
 
 ## See Also
 
-- [`enx stop`]({{ site.baseurl }}/commands/stop) — stop the project
 - [Configuration: `[start]`]({{ site.baseurl }}/configuration/project#start) — full schema

@@ -66,4 +66,3 @@ $ enx env
 ## See Also
 
 - [Configuration: `[env]`]({{ site.baseurl }}/configuration/project#env) — defining environments
-- [`enx status`]({{ site.baseurl }}/commands/status) — see which environment is active
