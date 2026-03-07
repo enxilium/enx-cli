@@ -17,6 +17,8 @@ enx is a cross-platform CLI that manages project navigation, environment bootstr
 [Get Started]({{ site.baseurl }}/quick-start){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
 [View on GitHub](https://github.com/enxilium/enx-cli){: .btn .fs-5 .mb-4 .mb-md-0 }
 
+[See all my projects →](https://jacemu.xyz){: .fs-4 .fw-300 }
+
 ---
 
 <div class="feature-grid" markdown="0">
@@ -33,8 +35,8 @@ enx is a cross-platform CLI that manages project navigation, environment bootstr
     <p>Define per-project or global tasks and run them with <code>enx run</code> — or just <code>enx &lt;task&gt;</code>.</p>
   </div>
   <div class="feature-card">
-    <h3>🩺 Doctor & Status</h3>
-    <p>Diagnose your environment with <code>enx doctor</code> and see what's running with <code>enx status</code>.</p>
+    <h3>🔓 Open Targets</h3>
+    <p>Open repo URLs, CI dashboards, or your editor with <code>enx open</code>.</p>
   </div>
 </div>
 
@@ -64,14 +66,12 @@ Both installers download the latest nightly binary and run `enx setup` automatic
 | :----------------------- | :------------------------------------------- |
 | `enx cd <query>`         | Fuzzy-find and navigate to a project         |
 | `enx up` / `enx down`    | Bootstrap or tear down a project environment |
-| `enx start` / `enx stop` | Start or stop the project                    |
+| `enx start`               | Start the project                            |
 | `enx run <task>`         | Run a custom task (project or global)        |
 | `enx env <name>`         | Switch environment configuration             |
 | `enx init`               | Scaffold a new `enx.toml`                    |
 | `enx clone <repo>`       | Clone a repo and register it                 |
 | `enx projects`           | List all registered projects                 |
-| `enx doctor`             | Diagnose the project environment             |
-| `enx status`             | Show current project status                  |
 | `enx open <target>`      | Open a URL or command target                 |
 
 See the full [Command Reference]({{ site.baseurl }}/commands/) for details.

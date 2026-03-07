@@ -84,10 +84,6 @@ fn dispatch(cli: cli::Cli) -> anyhow::Result<()> {
         cli::Commands::Open { target } => commands::open::run(&target)?,
         cli::Commands::Env { query } => commands::env::run(query.as_deref())?,
         cli::Commands::Setup => commands::setup::run()?,
-
-        _ => {
-            output::warning("This command has not been implemented yet.");
-        }
     }
 
     Ok(())

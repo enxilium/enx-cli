@@ -28,12 +28,6 @@ pub enum Commands {
     /// Starts the current project as defined per-project. Must be inside a registered project directory.
     Start,
 
-    /// Stops the current project as defined per-project. Must be inside a registered project directory.
-    Stop,
-
-    /// Displays active diagnostic information about the project.
-    Doctor,
-
     /// Lists all registered projects.
     Projects,
 
@@ -65,9 +59,6 @@ pub enum Commands {
 
     /// Opens a URL in the default browser. Targets are defined in the project's enx.toml under [open] and must be URLs.
     Open { target: String },
-
-    /// Shows current project's status.
-    Status,
 
     /// Runs a custom task defined in the project's enx.toml file under the [tasks] section, or global tasks defined in enx config.
     /// If no task name is provided, displays all available tasks.
