@@ -41,13 +41,22 @@ try {
     $enxBin = Join-Path $installDir "enx.exe"
     Move-Item -Path $tmpFile -Destination $enxBin -Force
 
+    # Add to user PATH if not already present
+    $userPath = [Environment]::GetEnvironmentVariable("PATH", "User") -split ";"
+    if ($userPath -notcontains $installDir) {
+        Write-Host "==> adding $installDir to user PATH"
+        $newPath = ([Environment]::GetEnvironmentVariable("PATH", "User") -split ";") + $installDir
+        $newPath = $newPath -join ";"
+        [Environment]::SetEnvironmentVariable("PATH", $newPath, "User")
+    }
+
     Write-Host "==> running enx setup"
     & $enxBin setup
 
     Write-Host ""
     Write-Host "setup finished"
-    Write-Host "if '$installDir' is not in PATH, add it to your user PATH"
-    Write-Host "if shell integration does not apply immediately, restart your shell"
+    Write-Host "enx is now installed and available in your PATH"
+    Write-Host "restart your PowerShell window for the PATH change to take effect"
 }
 finally {
     if (Test-Path $tmpFile) {

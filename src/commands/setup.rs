@@ -60,6 +60,14 @@ pub fn run() -> anyhow::Result<()> {
 
     output::newline();
 
+    // ── Windows PATH setup ──────────────────────────────────────────
+    #[cfg(target_os = "windows")]
+    {
+        output::header("Windows PATH Setup");
+        ensure_binary_in_path()?;
+        output::newline();
+    }
+
     // ── Save & finish ───────────────────────────────────────────────
     global_config.defaults = Some(config::global::DefaultsConfig {
         projects_dir: Some(final_projects_dir),
@@ -281,5 +289,62 @@ fn ensure_source_line(rc_path: &std::path::Path, source_line: &str) -> anyhow::R
     updated.push('\n');
 
     std::fs::write(rc_path, updated)?;
+    Ok(())
+}
+
+/// On Windows, ensure the binary's directory is in the user PATH.
+/// This allows `enx` to be invoked from any PowerShell window without full path.
+#[cfg(target_os = "windows")]
+fn ensure_binary_in_path() -> anyhow::Result<()> {
+    use std::process::Command;
+
+    // Get the directory containing the running binary
+    let exe_path = std::env::current_exe()?;
+    let bin_dir = exe_path
+        .parent()
+        .ok_or_else(|| anyhow::anyhow!("could not determine binary directory"))?;
+
+    let bin_dir_str = bin_dir.to_string_lossy().to_string();
+
+    // Retrieve current user PATH
+    let output = Command::new("powershell.exe")
+        .arg("-NoProfile")
+        .arg("-Command")
+        .arg("[Environment]::GetEnvironmentVariable('PATH', 'User')")
+        .output()?;
+
+    let current_path = String::from_utf8(output.stdout)?;
+    let path_entries: Vec<&str> = current_path.trim().split(';').collect();
+
+    // Check if bin_dir is already in PATH
+    if path_entries.iter().any(|entry| {
+        entry.to_lowercase() == bin_dir_str.to_lowercase()
+            || entry.trim().to_lowercase() == bin_dir_str.to_lowercase()
+    }) {
+        output::step_ok("enx binary directory already in PATH");
+        return Ok(());
+    }
+
+    // Add to PATH using PowerShell to set the environment variable persistently
+    let new_path = format!("{};{}", current_path.trim(), bin_dir_str);
+    let cmd = format!(
+        r#"[Environment]::SetEnvironmentVariable('PATH', '{}', 'User')"#,
+        new_path.replace('\\', "\\\\").replace('"', "\\\"")
+    );
+
+    let output = Command::new("powershell.exe")
+        .arg("-NoProfile")
+        .arg("-Command")
+        .arg(&cmd)
+        .output()?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8(output.stderr).unwrap_or_default();
+        anyhow::bail!("failed to update PATH: {}", stderr);
+    }
+
+    output::step_ok(&format!("Added {} to user PATH", bin_dir.display()));
+    output::info("Restart PowerShell for the PATH change to take effect");
+
     Ok(())
 }
