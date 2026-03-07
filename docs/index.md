@@ -62,16 +62,16 @@ Both installers download the latest nightly binary and run `enx setup` automatic
 
 ## What Can It Do?
 
-| Command                  | Description                                  |
-| :----------------------- | :------------------------------------------- |
-| `enx cd <query>`         | Fuzzy-find and navigate to a project         |
-| `enx up` / `enx down`    | Bootstrap or tear down a project environment |
-| `enx start`               | Start the project                            |
-| `enx run <task>`         | Run a custom task (project or global)        |
-| `enx env <name>`         | Switch environment configuration             |
-| `enx init`               | Scaffold a new `enx.toml`                    |
-| `enx clone <repo>`       | Clone a repo and register it                 |
-| `enx projects`           | List all registered projects                 |
-| `enx open <target>`      | Open a URL or command target                 |
+| Command               | Description                                  |
+| :-------------------- | :------------------------------------------- |
+| `enx cd <query>`      | Fuzzy-find and navigate to a project         |
+| `enx up` / `enx down` | Bootstrap or tear down a project environment |
+| `enx start`           | Start the project                            |
+| `enx run <task>`      | Run a custom task (project or global)        |
+| `enx env <name>`      | Switch environment configuration             |
+| `enx init`            | Scaffold a new `enx.toml`                    |
+| `enx clone <repo>`    | Clone a repo and register it                 |
+| `enx projects`        | List all registered projects                 |
+| `enx open <target>`   | Open a URL or command target                 |
 
 See the full [Command Reference]({{ site.baseurl }}/commands/) for details.
