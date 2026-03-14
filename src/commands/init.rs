@@ -5,68 +5,66 @@ use crate::output;
 use same_file::is_same_file;
 use std::path::PathBuf;
 
-/// Generate a default `enx.toml` with the project name filled in and all
-/// sections present but empty.
+/// Generate a default `enx.toml` with the project name filled in and
+/// commented examples that reflect the exact expected schema.
 fn default_enx_toml(project_name: &str) -> String {
     format!(
         r#"# enx project configuration
-# syntax help: this file is TOML. strings are quoted, arrays use [..], and tables use [table].
+    # Example: name = "my-app"
+    # Example: steps = ["cmd1", "cmd2"]
+    # Example: [tasks.test]
 
 [project]
 # display name shown in `enx projects`
 name = "{project_name}"
 
-# Environment file mappings used by `enx env <name>`.
-# Each key is an environment name, each value is a dotenv file path.
-# Example:
-# [env]
-# dev = ".env"
-# staging = ".env.staging"
+# [env] maps environment name -> dotenv file path.
+# `enx env <name>` looks up the name here and loads that file.
 [env]
 # dev = ".env"
+# staging = ".env.staging"
 
-# Commands run by `enx up`.
-# Use a TOML array of shell command strings.
+# [up] uses a list of shell commands run by `enx up`.
 [up]
 steps = [
     # "npm install",
     # "docker compose up -d",
 ]
 
-# Commands run by `enx down`.
+# [down] uses a list of shell commands run by `enx down`.
 [down]
 steps = [
     # "docker compose down",
 ]
 
-# Commands run by `enx start`.
-# Multiple commands run in order.
+# [start] uses a list of shell commands run by `enx start`.
 [start]
 commands = [
     # "npm run dev",
 ]
 
-# Task definitions for `enx run <task>` or shorthand `enx <task>`.
-# Syntax:
-# [tasks.<name>]
-# command = "..."
-# description = "..."
+# [tasks] must use nested tables per task.
+# valid:
+#   [tasks.test]
+#   command = "npm test"
+#   description = "Run tests"
 #
-# If the task name contains special characters (like ':'), quote it:
+# invalid (will fail to parse):
+#   [tasks]
+#   test = "npm test"
+#
+# If the task name contains special characters (like ':'), quote the table key:
 # [tasks."db:migrate"]
 # command = "npx prisma migrate dev"
-[tasks]
-
 [tasks.test]
 command = "echo \"define your test command\""
 description = "Run test suite"
 
-# Named targets for `enx open <target>`.
-# Values can be URLs or shell commands.
-# Example targets: repo, docs, code, ci
+# [open] maps target name -> URL or shell command for `enx open <target>`.
 [open]
 # repo = "https://github.com/myorg/my-repo"
 # code = "code ."
+# docs = "https://docs.example.com"
 "#
     )
 }
