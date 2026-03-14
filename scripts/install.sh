@@ -24,6 +24,35 @@ ARCH=$(uname -m)
 
 BIN_NAME="enx"
 
+detect_invoking_shell() {
+    if [ -n "${FISH_VERSION:-}" ]; then
+        echo "fish"
+        return
+    fi
+    if [ -n "${ZSH_VERSION:-}" ]; then
+        echo "zsh"
+        return
+    fi
+    if [ -n "${BASH_VERSION:-}" ]; then
+        echo "bash"
+        return
+    fi
+
+    if command -v ps >/dev/null 2>&1; then
+        parent_comm=$(ps -p "$PPID" -o comm= 2>/dev/null || true)
+        parent_comm=$(basename "$parent_comm" | tr '[:upper:]' '[:lower:]' | sed 's/^-//')
+
+        case "$parent_comm" in
+            fish|zsh|bash)
+                echo "$parent_comm"
+                return
+                ;;
+        esac
+    fi
+
+    echo ""
+}
+
 case "$OS" in
     linux)
         case "$ARCH" in
@@ -87,9 +116,14 @@ EOF
 fi
 
 ENX_BIN="$INSTALL_DIR/enx"
+SETUP_SHELL=$(detect_invoking_shell)
 
 echo "==> running enx setup"
-"$ENX_BIN" setup
+if [ -n "$SETUP_SHELL" ]; then
+    ENX_SETUP_SHELL="$SETUP_SHELL" "$ENX_BIN" setup
+else
+    "$ENX_BIN" setup
+fi
 
 echo ""
 echo "setup finished"

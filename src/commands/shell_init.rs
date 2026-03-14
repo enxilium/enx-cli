@@ -106,7 +106,9 @@ function enx
         return 1
     end
 
-    env ENX_FINALIZER_FILE="$tmpfile" command enx $argv
+    set -lx ENX_FINALIZER_FILE "$tmpfile"
+    command enx $argv
+    set -e ENX_FINALIZER_FILE
     set -l exit_code $status
 
     if test $exit_code -eq 0; and test -f "$tmpfile"

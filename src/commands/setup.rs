@@ -185,6 +185,15 @@ fn has_non_empty_env(key: &str) -> bool {
         .unwrap_or(false)
 }
 
+fn normalize_shell_name(shell: &str) -> Option<&'static str> {
+    match shell.trim().to_ascii_lowercase().as_str() {
+        "fish" => Some("fish"),
+        "zsh" => Some("zsh"),
+        "bash" => Some("bash"),
+        _ => None,
+    }
+}
+
 #[cfg(unix)]
 fn detect_parent_shell() -> Option<String> {
     use std::process::Command;
@@ -228,6 +237,12 @@ fn detect_parent_shell() -> Option<String> {
 /// Priority follows active-shell markers first (`ZSH_VERSION`,
 /// `BASH_VERSION`, `FISH_VERSION`), then falls back to `$SHELL`.
 fn detect_shell() -> anyhow::Result<String> {
+    if let Ok(explicit_shell) = std::env::var("ENX_SETUP_SHELL") {
+        if let Some(shell) = normalize_shell_name(&explicit_shell) {
+            return Ok(shell.to_string());
+        }
+    }
+
     if has_non_empty_env("FISH_VERSION") {
         return Ok("fish".to_string());
     }
