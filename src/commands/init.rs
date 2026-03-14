@@ -9,29 +9,64 @@ use std::path::PathBuf;
 /// sections present but empty.
 fn default_enx_toml(project_name: &str) -> String {
     format!(
-        r#"[project]
+        r#"# enx project configuration
+# syntax help: this file is TOML. strings are quoted, arrays use [..], and tables use [table].
+
+[project]
+# display name shown in `enx projects`
 name = "{project_name}"
 
+# Environment file mappings used by `enx env <name>`.
+# Each key is an environment name, each value is a dotenv file path.
+# Example:
+# [env]
+# dev = ".env"
+# staging = ".env.staging"
 [env]
+# dev = ".env"
 
+# Commands run by `enx up`.
+# Use a TOML array of shell command strings.
 [up]
 steps = [
-
+    # "npm install",
+    # "docker compose up -d",
 ]
 
+# Commands run by `enx down`.
 [down]
 steps = [
-
+    # "docker compose down",
 ]
 
+# Commands run by `enx start`.
+# Multiple commands run in order.
 [start]
 commands = [
-
+    # "npm run dev",
 ]
 
+# Task definitions for `enx run <task>` or shorthand `enx <task>`.
+# Syntax:
+# [tasks.<name>]
+# command = "..."
+# description = "..."
+#
+# If the task name contains special characters (like ':'), quote it:
+# [tasks."db:migrate"]
+# command = "npx prisma migrate dev"
 [tasks]
 
+[tasks.test]
+command = "echo \"define your test command\""
+description = "Run test suite"
+
+# Named targets for `enx open <target>`.
+# Values can be URLs or shell commands.
+# Example targets: repo, docs, code, ci
 [open]
+# repo = "https://github.com/myorg/my-repo"
+# code = "code ."
 "#
     )
 }

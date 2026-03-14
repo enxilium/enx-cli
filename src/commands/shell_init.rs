@@ -10,12 +10,13 @@ use crate::cli::Cli;
 
 /// Build the shell wrapper and completions script for the given shell name.
 ///
-/// Only bash and zsh are supported — they share the same wrapper function,
-/// just with different completions.
+/// Bash and zsh share the same wrapper function, while fish uses a dedicated
+/// wrapper implementation.
 pub fn generate_script(shell_name: &str) -> anyhow::Result<String> {
     let script = match shell_name {
         "bash" => generate_bash(),
         "zsh" => generate_zsh(),
+        "fish" => generate_fish(),
         _ => anyhow::bail!("unsupported shell: {shell_name}"),
     };
 
@@ -89,4 +90,49 @@ fn generate_bash() -> String {
 fn generate_zsh() -> String {
     let completions = completions_for(Shell::Zsh);
     bash_zsh_wrapper(&completions)
+}
+
+fn fish_wrapper(completions: &str) -> String {
+    format!(
+        r#"
+function enx
+    set -l tmpdir /tmp
+    if set -q TMPDIR
+        set tmpdir "$TMPDIR"
+    end
+
+    set -l tmpfile (mktemp "$tmpdir/enx-finalizer.XXXXXX")
+    if test -z "$tmpfile"
+        return 1
+    end
+
+    env ENX_FINALIZER_FILE="$tmpfile" command enx $argv
+    set -l exit_code $status
+
+    if test $exit_code -eq 0; and test -f "$tmpfile"
+        while read -l line
+            if string match -q "cd:*" -- $line
+                cd (string replace -r '^cd:' '' -- $line); or true
+            else if string match -q "setenv:*" -- $line
+                set -l kv (string replace -r '^setenv:' '' -- $line)
+                set -l parts (string split -m1 '=' -- $kv)
+                if test (count $parts) -eq 2
+                    set -gx $parts[1] $parts[2]
+                end
+            end
+        end < "$tmpfile"
+    end
+
+    rm -f "$tmpfile"
+    return $exit_code
+end
+
+{completions}
+"#
+    )
+}
+
+fn generate_fish() -> String {
+    let completions = completions_for(Shell::Fish);
+    fish_wrapper(&completions)
 }

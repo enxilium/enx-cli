@@ -178,17 +178,19 @@ fn initialize_shell() -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Detect whether the user is running bash or zsh.
+/// Detect the current shell using shell-specific version variables.
 ///
-/// We only support bash-compatible shells (bash, zsh). They share the
-/// same wrapper function and source-line syntax. On Windows this will
-/// always fall through to "bash" (Git Bash).
+/// Priority follows active-shell markers first (`ZSH_VERSION`,
+/// `BASH_VERSION`, `FISH_VERSION`), then falls back to `$SHELL`.
 fn detect_shell() -> anyhow::Result<String> {
     if std::env::var("ZSH_VERSION").is_ok() {
         return Ok("zsh".to_string());
     }
     if std::env::var("BASH_VERSION").is_ok() {
         return Ok("bash".to_string());
+    }
+    if std::env::var("FISH_VERSION").is_ok() {
+        return Ok("fish".to_string());
     }
 
     // Fallback: check $SHELL
@@ -200,9 +202,10 @@ fn detect_shell() -> anyhow::Result<String> {
         .to_ascii_lowercase();
 
     match shell_name.as_str() {
+        "fish" => Ok("fish".to_string()),
         "zsh" => Ok("zsh".to_string()),
-        // Everything else (bash, unknown, Windows with no $SHELL) → bash
-        _ => Ok("bash".to_string()),
+        "bash" => Ok("bash".to_string()),
+        _ => anyhow::bail!("unsupported shell for setup; run 'enx setup' from bash, zsh, or fish"),
     }
 }
 
@@ -211,6 +214,12 @@ fn shell_rc_path(shell: &str) -> anyhow::Result<PathBuf> {
         dirs::home_dir().ok_or_else(|| anyhow::anyhow!("could not determine home directory"))?;
 
     let path = match shell {
+        "fish" => {
+            let config_home = std::env::var("XDG_CONFIG_HOME")
+                .map(PathBuf::from)
+                .unwrap_or_else(|_| home.join(".config"));
+            config_home.join("fish").join("config.fish")
+        }
         "zsh" => {
             // Respect ZDOTDIR if set — zsh reads .zshrc from there instead of $HOME.
             match std::env::var("ZDOTDIR") {
@@ -225,13 +234,19 @@ fn shell_rc_path(shell: &str) -> anyhow::Result<PathBuf> {
     Ok(path)
 }
 
-fn script_file_name(_shell: &str) -> &'static str {
-    "init.sh"
+fn script_file_name(shell: &str) -> &'static str {
+    match shell {
+        "fish" => "init.fish",
+        _ => "init.sh",
+    }
 }
 
-fn source_line(_shell: &str, script_path: &std::path::Path) -> String {
+fn source_line(shell: &str, script_path: &std::path::Path) -> String {
     let rendered = script_path.display();
-    format!("[ -f \"{rendered}\" ] && source \"{rendered}\"")
+    match shell {
+        "fish" => format!("test -f \"{rendered}\"; and source \"{rendered}\""),
+        _ => format!("[ -f \"{rendered}\" ] && source \"{rendered}\""),
+    }
 }
 
 fn ensure_source_line(rc_path: &std::path::Path, source_line: &str) -> anyhow::Result<()> {

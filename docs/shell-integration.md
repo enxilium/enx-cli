@@ -32,11 +32,12 @@ A child process cannot change the parent shell's working directory. This means `
 
 When you run `enx setup`, it detects your shell and appends the appropriate wrapper function to your shell configuration file:
 
-| Shell              | Config file |
-| :----------------- | :---------- |
-| Bash               | `~/.bashrc` |
-| Zsh                | `~/.zshrc`  |
-| Git Bash (Windows) | `~/.bashrc` |
+| Shell              | Config file                  |
+| :----------------- | :--------------------------- |
+| Bash               | `~/.bashrc`                  |
+| Zsh                | `~/.zshrc`                   |
+| Fish               | `~/.config/fish/config.fish` |
+| Git Bash (Windows) | `~/.bashrc`                  |
 
 {: .tip }
 
@@ -65,6 +66,40 @@ enx() {
         command enx "$@"
     fi
 }
+```
+
+### Fish
+
+Add this to your `~/.config/fish/config.fish`:
+
+```fish
+function enx
+    set -l tmpdir /tmp
+    if set -q TMPDIR
+        set tmpdir "$TMPDIR"
+    end
+
+    set -l tmpfile (mktemp "$tmpdir/enx-finalizer.XXXXXX")
+    env ENX_FINALIZER_FILE="$tmpfile" command enx $argv
+    set -l exit_code $status
+
+    if test $exit_code -eq 0; and test -f "$tmpfile"
+        while read -l line
+            if string match -q "cd:*" -- $line
+                cd (string replace -r '^cd:' '' -- $line)
+            else if string match -q "setenv:*" -- $line
+                set -l kv (string replace -r '^setenv:' '' -- $line)
+                set -l parts (string split -m1 '=' -- $kv)
+                if test (count $parts) -eq 2
+                    set -gx $parts[1] $parts[2]
+                end
+            end
+        end < "$tmpfile"
+    end
+
+    rm -f "$tmpfile"
+    return $exit_code
+end
 ```
 
 ---
