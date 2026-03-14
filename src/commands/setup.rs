@@ -178,19 +178,66 @@ fn initialize_shell() -> anyhow::Result<()> {
     Ok(())
 }
 
+fn has_non_empty_env(key: &str) -> bool {
+    std::env::var(key)
+        .ok()
+        .map(|value| !value.trim().is_empty())
+        .unwrap_or(false)
+}
+
+#[cfg(unix)]
+fn detect_parent_shell() -> Option<String> {
+    use std::process::Command;
+
+    let ppid = std::os::unix::process::parent_id();
+
+    let output = Command::new("ps")
+        .arg("-p")
+        .arg(ppid.to_string())
+        .arg("-o")
+        .arg("comm=")
+        .output()
+        .ok()?;
+
+    if !output.status.success() {
+        return None;
+    }
+
+    let comm = String::from_utf8_lossy(&output.stdout).trim().to_ascii_lowercase();
+    let base = std::path::Path::new(&comm)
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or(&comm)
+        .trim_start_matches('-');
+
+    match base {
+        "fish" | "zsh" | "bash" => Some(base.to_string()),
+        _ => None,
+    }
+}
+
+#[cfg(not(unix))]
+fn detect_parent_shell() -> Option<String> {
+    None
+}
+
 /// Detect the current shell using shell-specific version variables.
 ///
 /// Priority follows active-shell markers first (`ZSH_VERSION`,
 /// `BASH_VERSION`, `FISH_VERSION`), then falls back to `$SHELL`.
 fn detect_shell() -> anyhow::Result<String> {
-    if std::env::var("ZSH_VERSION").is_ok() {
+    if has_non_empty_env("FISH_VERSION") {
+        return Ok("fish".to_string());
+    }
+    if has_non_empty_env("ZSH_VERSION") {
         return Ok("zsh".to_string());
     }
-    if std::env::var("BASH_VERSION").is_ok() {
+    if has_non_empty_env("BASH_VERSION") {
         return Ok("bash".to_string());
     }
-    if std::env::var("FISH_VERSION").is_ok() {
-        return Ok("fish".to_string());
+
+    if let Some(parent_shell) = detect_parent_shell() {
+        return Ok(parent_shell);
     }
 
     // Fallback: check $SHELL
