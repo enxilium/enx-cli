@@ -24,19 +24,18 @@ How enx integrates with your shell to enable features like `enx cd`.
 
 A child process cannot change the parent shell's working directory. This means `enx cd` can't directly `cd` you into a project — it needs a shell wrapper function that captures the output and calls the shell's built-in `cd`.
 
-`enx setup` detects your shell and installs this wrapper automatically. If you need to set it up manually, see the snippets below.
+`enx setup` regenerates shell integration for both bash and zsh automatically. If you need to set it up manually, see the snippets below.
 
 ---
 
 ## Automatic Setup
 
-When you run `enx setup`, it detects your shell and appends the appropriate wrapper function to your shell configuration file:
+When you run `enx setup`, it regenerates enx shell scripts and appends/repairs source lines in your shell config files:
 
 | Shell              | Config file                  |
 | :----------------- | :--------------------------- |
 | Bash               | `~/.bashrc`                  |
 | Zsh                | `~/.zshrc`                   |
-| Fish               | `~/.config/fish/config.fish` |
 | Git Bash (Windows) | `~/.bashrc`                  |
 
 {: .tip }
@@ -66,40 +65,6 @@ enx() {
         command enx "$@"
     fi
 }
-```
-
-### Fish
-
-Add this to your `~/.config/fish/config.fish`:
-
-```fish
-function enx
-    set -l tmpdir /tmp
-    if set -q TMPDIR
-        set tmpdir "$TMPDIR"
-    end
-
-    set -l tmpfile (mktemp "$tmpdir/enx-finalizer.XXXXXX")
-    env ENX_FINALIZER_FILE="$tmpfile" command enx $argv
-    set -l exit_code $status
-
-    if test $exit_code -eq 0; and test -f "$tmpfile"
-        while read -l line
-            if string match -q "cd:*" -- $line
-                cd (string replace -r '^cd:' '' -- $line)
-            else if string match -q "setenv:*" -- $line
-                set -l kv (string replace -r '^setenv:' '' -- $line)
-                set -l parts (string split -m1 '=' -- $kv)
-                if test (count $parts) -eq 2
-                    set -gx $parts[1] $parts[2]
-                end
-            end
-        end < "$tmpfile"
-    end
-
-    rm -f "$tmpfile"
-    return $exit_code
-end
 ```
 
 ---
@@ -136,3 +101,15 @@ pwd  # should show your project's path
 ```
 
 If `pwd` shows the correct path, shell integration is working.
+
+---
+
+## Troubleshooting
+
+If bash starts with errors like `autoload: command not found` or `compdef: command not found`, a zsh completion script is being sourced in bash.
+
+Fix steps:
+
+1. Run `command enx setup` in bash.
+2. Restart bash.
+3. If errors persist, remove old enx source lines from `~/.bashrc`, then run `command enx setup` again.

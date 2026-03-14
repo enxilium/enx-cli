@@ -22,7 +22,7 @@ enx provides a one-line POSIX-shell installer that works across macOS, Linux, an
 
 ## Install with POSIX shell (all OSes)
 
-Run the installer script from a POSIX shell (`bash`, `zsh`, or `fish`) — it downloads the latest nightly binary and places it in `~/.local/bin`:
+Run the installer script from a POSIX shell (`bash` or `zsh`) — it downloads the latest nightly binary and places it in `~/.local/bin`:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/enxilium/enx-cli/main/scripts/install.sh -o install.sh
@@ -65,11 +65,11 @@ The binary will be at `target/release/enx`. Copy it somewhere on your `PATH` and
 
 ## Post-Install
 
-After installation, run `enx setup` in the shell you want integrated. It:
+After installation, run `enx setup`. It:
 
 - Creates the global config directory (`~/.config/enx/` on Linux/macOS, `~\AppData\Roaming\enx\` on Windows)
 - Initializes `config.toml` and `registry.toml`
-- Configures shell integration for Bash, Zsh, or Fish
+- Regenerates shell integration for Bash and Zsh
 
 If shell integration does not take effect immediately, restart your shell or source your shell config file.
 

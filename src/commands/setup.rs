@@ -152,146 +152,40 @@ fn auto_index_projects(projects_dir: &str) -> anyhow::Result<()> {
 }
 
 fn initialize_shell() -> anyhow::Result<()> {
-    let shell = detect_shell()?;
-
-    let sp = output::spinner(&format!("Installing shell integration for {shell}..."));
-
-    let script = shell_init::generate_script(&shell)?;
+    let sp = output::spinner("Installing shell integration for bash and zsh...");
 
     let shell_dir = config::config_dir()?.join("shell");
     std::fs::create_dir_all(&shell_dir)?;
 
-    let script_path = shell_dir.join(script_file_name(&shell));
-    std::fs::write(&script_path, script)?;
+    let bash_script = shell_init::generate_script("bash")?;
+    let zsh_script = shell_init::generate_script("zsh")?;
 
-    let rc_path = shell_rc_path(&shell)?;
-    let source_line = source_line(&shell, &script_path);
-    ensure_source_line(&rc_path, &source_line)?;
+    let bash_script_path = shell_dir.join(script_file_name("bash"));
+    let zsh_script_path = shell_dir.join(script_file_name("zsh"));
+
+    std::fs::write(&bash_script_path, bash_script)?;
+    std::fs::write(&zsh_script_path, zsh_script)?;
+
+    let bash_rc_path = shell_rc_path("bash")?;
+    let bash_source_line = source_line("bash", &bash_script_path);
+    ensure_source_line(&bash_rc_path, &bash_source_line)?;
+
+    let zsh_rc_path = shell_rc_path("zsh")?;
+    let zsh_source_line = source_line("zsh", &zsh_script_path);
+    ensure_source_line(&zsh_rc_path, &zsh_source_line)?;
 
     sp.finish_and_clear();
 
     output::step_ok(&format!(
-        "Shell integration installed for {shell} ({})",
-        rc_path.display()
+        "Shell integration installed for bash ({})",
+        bash_rc_path.display()
+    ));
+    output::step_ok(&format!(
+        "Shell integration installed for zsh ({})",
+        zsh_rc_path.display()
     ));
 
     Ok(())
-}
-
-fn has_non_empty_env(key: &str) -> bool {
-    std::env::var(key)
-        .ok()
-        .map(|value| !value.trim().is_empty())
-        .unwrap_or(false)
-}
-
-fn normalize_shell_name(shell: &str) -> Option<&'static str> {
-    match shell.trim().to_ascii_lowercase().as_str() {
-        "fish" => Some("fish"),
-        "zsh" => Some("zsh"),
-        "bash" => Some("bash"),
-        _ => None,
-    }
-}
-
-#[cfg(unix)]
-fn detect_parent_shell() -> Option<String> {
-    use std::process::Command;
-
-    let mut pid = std::os::unix::process::parent_id();
-
-    for _ in 0..8 {
-        if pid == 0 {
-            return None;
-        }
-
-        let output = Command::new("ps")
-            .arg("-p")
-            .arg(pid.to_string())
-            .arg("-o")
-            .arg("comm=")
-            .arg("-o")
-            .arg("ppid=")
-            .output()
-            .ok()?;
-
-        if !output.status.success() {
-            return None;
-        }
-
-        let line = String::from_utf8_lossy(&output.stdout).trim().to_string();
-        if line.is_empty() {
-            return None;
-        }
-
-        let mut parts = line.split_whitespace();
-        let comm = parts.next()?.to_ascii_lowercase();
-        let next_pid = parts
-            .next()
-            .and_then(|p| p.parse::<u32>().ok())
-            .unwrap_or(0);
-
-        let base = std::path::Path::new(&comm)
-            .file_name()
-            .and_then(|name| name.to_str())
-            .unwrap_or(&comm)
-            .trim_start_matches('-');
-
-        match base {
-            "fish" | "zsh" | "bash" => return Some(base.to_string()),
-            _ => {
-                pid = next_pid;
-            }
-        }
-    }
-
-    None
-}
-
-#[cfg(not(unix))]
-fn detect_parent_shell() -> Option<String> {
-    None
-}
-
-/// Detect the current shell using shell-specific version variables.
-///
-/// Priority follows active-shell markers first (`ZSH_VERSION`,
-/// `BASH_VERSION`, `FISH_VERSION`), then falls back to `$SHELL`.
-fn detect_shell() -> anyhow::Result<String> {
-    if let Ok(explicit_shell) = std::env::var("ENX_SETUP_SHELL")
-        && let Some(shell) = normalize_shell_name(&explicit_shell)
-    {
-        return Ok(shell.to_string());
-    }
-
-    if has_non_empty_env("FISH_VERSION") {
-        return Ok("fish".to_string());
-    }
-    if has_non_empty_env("ZSH_VERSION") {
-        return Ok("zsh".to_string());
-    }
-    if has_non_empty_env("BASH_VERSION") {
-        return Ok("bash".to_string());
-    }
-
-    if let Some(parent_shell) = detect_parent_shell() {
-        return Ok(parent_shell);
-    }
-
-    // Fallback: check $SHELL
-    let shell_path = std::env::var("SHELL").unwrap_or_default();
-    let shell_name = std::path::Path::new(&shell_path)
-        .file_name()
-        .and_then(|name| name.to_str())
-        .unwrap_or("")
-        .to_ascii_lowercase();
-
-    match shell_name.as_str() {
-        "fish" => Ok("fish".to_string()),
-        "zsh" => Ok("zsh".to_string()),
-        "bash" => Ok("bash".to_string()),
-        _ => anyhow::bail!("unsupported shell for setup; run 'enx setup' from bash, zsh, or fish"),
-    }
 }
 
 fn shell_rc_path(shell: &str) -> anyhow::Result<PathBuf> {
@@ -299,12 +193,6 @@ fn shell_rc_path(shell: &str) -> anyhow::Result<PathBuf> {
         dirs::home_dir().ok_or_else(|| anyhow::anyhow!("could not determine home directory"))?;
 
     let path = match shell {
-        "fish" => {
-            let config_home = std::env::var("XDG_CONFIG_HOME")
-                .map(PathBuf::from)
-                .unwrap_or_else(|_| home.join(".config"));
-            config_home.join("fish").join("config.fish")
-        }
         "zsh" => {
             // Respect ZDOTDIR if set — zsh reads .zshrc from there instead of $HOME.
             match std::env::var("ZDOTDIR") {
@@ -321,17 +209,15 @@ fn shell_rc_path(shell: &str) -> anyhow::Result<PathBuf> {
 
 fn script_file_name(shell: &str) -> &'static str {
     match shell {
-        "fish" => "init.fish",
-        _ => "init.sh",
+        "zsh" => "init.zsh",
+        _ => "init.bash",
     }
 }
 
 fn source_line(shell: &str, script_path: &std::path::Path) -> String {
+    let _ = shell;
     let rendered = script_path.display();
-    match shell {
-        "fish" => format!("test -f \"{rendered}\"; and source \"{rendered}\""),
-        _ => format!("[ -f \"{rendered}\" ] && source \"{rendered}\""),
-    }
+    format!("[ -f \"{rendered}\" ] && source \"{rendered}\"")
 }
 
 fn ensure_source_line(rc_path: &std::path::Path, source_line: &str) -> anyhow::Result<()> {
@@ -379,9 +265,11 @@ fn ensure_source_line(rc_path: &std::path::Path, source_line: &str) -> anyhow::R
 fn is_enx_shell_source_line(line: &str) -> bool {
     let has_source = line.contains("source ");
     let has_init = line.contains("/enx/shell/init.sh")
-        || line.contains("/enx/shell/init.fish")
+        || line.contains("/enx/shell/init.bash")
+        || line.contains("/enx/shell/init.zsh")
         || line.contains("\\enx\\shell\\init.sh")
-        || line.contains("\\enx\\shell\\init.fish");
+        || line.contains("\\enx\\shell\\init.bash")
+        || line.contains("\\enx\\shell\\init.zsh");
 
     has_source && has_init
 }

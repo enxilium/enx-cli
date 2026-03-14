@@ -94,7 +94,7 @@ fn dispatch(cli: cli::Cli) -> anyhow::Result<()> {
 /// The `console` 0.16.x crate (used by `dialoguer`) activates the kitty
 /// keyboard protocol during raw-mode key reads.  If cleanup is missed the
 /// terminal keeps encoding keys as CSI u sequences, which shells like
-/// fish cannot interpret — e.g. Enter appears as `u`, Backspace as `7u`.
+/// bash and zsh cannot interpret — e.g. Enter appears as `u`, Backspace as `7u`.
 ///
 /// Sending the "pop" sequence (`\x1b[<u`) restores normal behaviour.
 fn reset_keyboard_mode() {

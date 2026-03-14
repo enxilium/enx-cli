@@ -50,9 +50,9 @@ sh install.sh
 enx setup
 ```
 
-On Windows, run this from Git Bash, MSYS2, Cygwin, or WSL.
+On Windows, run this from Git Bash, MSYS2, Cygwin, or WSL (bash/zsh environments).
 
-The installer downloads the latest nightly binary and runs `enx setup` automatically.
+The installer downloads the latest nightly binary. Then run `enx setup` in your current shell.
 
 ---
 
