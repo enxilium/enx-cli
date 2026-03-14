@@ -7,7 +7,9 @@
 Use a POSIX shell (bash/zsh/fish) on any OS:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/enxilium/enx-cli/main/scripts/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/enxilium/enx-cli/main/scripts/install.sh -o install.sh
+sh install.sh
+enx setup
 ```
 
 On Windows, run this from Git Bash, MSYS2, Cygwin, or WSL.

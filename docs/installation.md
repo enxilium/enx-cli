@@ -22,10 +22,12 @@ enx provides a one-line POSIX-shell installer that works across macOS, Linux, an
 
 ## Install with POSIX shell (all OSes)
 
-Run the installer script from a POSIX shell (`bash`, `zsh`, or `fish`) — it downloads the latest nightly binary, places it in `~/.local/bin`, and runs `enx setup`:
+Run the installer script from a POSIX shell (`bash`, `zsh`, or `fish`) — it downloads the latest nightly binary and places it in `~/.local/bin`:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/enxilium/enx-cli/main/scripts/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/enxilium/enx-cli/main/scripts/install.sh -o install.sh
+sh install.sh
+enx setup
 ```
 
 On Windows, use Git Bash, MSYS2, Cygwin, or WSL.
@@ -35,7 +37,7 @@ On Windows, use Git Bash, MSYS2, Cygwin, or WSL.
 1. Detects your OS and architecture (Linux/macOS: x86_64 or aarch64, Windows POSIX env: x86_64)
 2. Downloads the matching binary from the latest `nightly` release on GitHub
 3. Installs it to `~/.local/bin` (override with `ENX_INSTALL_DIR`)
-4. Runs `enx setup` to create your global config and configure shell integration
+4. Prints next steps to run `enx setup` in your current shell
 
 ### Environment variables
 
@@ -63,11 +65,11 @@ The binary will be at `target/release/enx`. Copy it somewhere on your `PATH` and
 
 ## Post-Install
 
-After installation, `enx setup` runs automatically. It:
+After installation, run `enx setup` in the shell you want integrated. It:
 
 - Creates the global config directory (`~/.config/enx/` on Linux/macOS, `~\AppData\Roaming\enx\` on Windows)
 - Initializes `config.toml` and `registry.toml`
-- Configures shell integration for Bash or Zsh
+- Configures shell integration for Bash, Zsh, or Fish
 
 If shell integration does not take effect immediately, restart your shell or source your shell config file.
 
