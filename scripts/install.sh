@@ -22,6 +22,8 @@ TMP_FILE="${TMPDIR:-/tmp}/enx-install.$$"
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 ARCH=$(uname -m)
 
+BIN_NAME="enx"
+
 case "$OS" in
     linux)
         case "$ARCH" in
@@ -43,9 +45,20 @@ case "$OS" in
                 ;;
         esac
         ;;
+    msys*|mingw*|cygwin*)
+        case "$ARCH" in
+            x86_64|amd64) ASSET="enx-windows-x86_64.exe" ;;
+            *)
+                echo "error: unsupported windows architecture: $ARCH" >&2
+                echo "windows installer support currently requires x86_64" >&2
+                exit 1
+                ;;
+        esac
+        BIN_NAME="enx.exe"
+        ;;
     *)
         echo "error: unsupported operating system: $OS" >&2
-        echo "this installer currently supports Linux and macOS" >&2
+        echo "use a POSIX shell environment (bash/zsh/fish) on Linux, macOS, or Windows (Git Bash/MSYS2/Cygwin/WSL)" >&2
         exit 1
         ;;
 esac
@@ -59,10 +72,19 @@ if ! curl -fsSL "$DOWNLOAD_URL" -o "$TMP_FILE"; then
     exit 1
 fi
 
-echo "==> installing to $INSTALL_DIR/enx"
+echo "==> installing to $INSTALL_DIR/$BIN_NAME"
 mkdir -p "$INSTALL_DIR"
 chmod +x "$TMP_FILE"
-mv "$TMP_FILE" "$INSTALL_DIR/enx"
+mv "$TMP_FILE" "$INSTALL_DIR/$BIN_NAME"
+
+if [ "$BIN_NAME" = "enx.exe" ]; then
+    cat > "$INSTALL_DIR/enx" <<'EOF'
+#!/usr/bin/env sh
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+exec "$SCRIPT_DIR/enx.exe" "$@"
+EOF
+    chmod +x "$INSTALL_DIR/enx"
+fi
 
 ENX_BIN="$INSTALL_DIR/enx"
 

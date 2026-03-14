@@ -44,19 +44,13 @@ enx is a cross-platform CLI that manages project navigation, environment bootstr
 
 ## Quick Install
 
-### macOS / Linux
-
 ```sh
 curl -fsSL https://raw.githubusercontent.com/enxilium/enx-cli/main/scripts/install.sh | sh
 ```
 
-### Windows (PowerShell)
+On Windows, run this from Git Bash, MSYS2, Cygwin, or WSL.
 
-```powershell
-iwr -useb https://raw.githubusercontent.com/enxilium/enx-cli/main/scripts/install.ps1 | iex
-```
-
-Both installers download the latest nightly binary and run `enx setup` automatically.
+The installer downloads the latest nightly binary and runs `enx setup` automatically.
 
 ---
 

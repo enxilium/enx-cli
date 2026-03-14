@@ -4,20 +4,12 @@
 
 ## Installation
 
-### macOS / Linux
+Use a POSIX shell (bash/zsh/fish) on any OS:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/enxilium/enx-cli/main/scripts/install.sh | sh
 ```
 
-### Windows (PowerShell)
+On Windows, run this from Git Bash, MSYS2, Cygwin, or WSL.
 
-Requires [Git for Windows](https://git-scm.com) (Git Bash).
-
-```powershell
-iwr -useb https://raw.githubusercontent.com/enxilium/enx-cli/main/scripts/install.ps1 | iex
-```
-
-After installing, use enx from **Git Bash** for full shell integration.
-
-Both installers will download the latest `nightly` binary and run `enx setup` automatically.
+The installer downloads the latest `nightly` binary and runs `enx setup` automatically.

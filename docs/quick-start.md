@@ -23,12 +23,10 @@ Get from zero to a fully managed project in under five minutes.
 ## 1. Install enx
 
 ```sh
-# macOS / Linux
 curl -fsSL https://raw.githubusercontent.com/enxilium/enx-cli/main/scripts/install.sh | sh
-
-# Windows (PowerShell)
-iwr -useb https://raw.githubusercontent.com/enxilium/enx-cli/main/scripts/install.ps1 | iex
 ```
+
+On Windows, run this from Git Bash, MSYS2, Cygwin, or WSL.
 
 The installer downloads the binary and runs `enx setup` for you. Restart your shell if prompted.
 

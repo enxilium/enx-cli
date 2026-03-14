@@ -1,69 +1,7 @@
-Set-StrictMode -Version Latest
-$ErrorActionPreference = "Stop"
-
-# enx installer (Windows / PowerShell)
-# One-line usage:
-#   iwr -useb https://raw.githubusercontent.com/enxilium/enx-cli/main/scripts/install.ps1 | iex
-
-# Override if installing from a fork:
-#   $env:ENX_REPO = "owner/repo"
-#   iwr -useb https://raw.githubusercontent.com/owner/repo/main/scripts/install.ps1 | iex
-$repo = if ($env:ENX_REPO) { $env:ENX_REPO } else { "enxilium/enx-cli" }
-
-# Channel/tag to install from. CI publishes rolling binaries to this tag.
-$channel = if ($env:ENX_CHANNEL) { $env:ENX_CHANNEL } else { "nightly" }
-
-$defaultInstallDir = Join-Path $HOME "AppData/Local/enx/bin"
-$installDir = if ($env:ENX_INSTALL_DIR) { $env:ENX_INSTALL_DIR } else { $defaultInstallDir }
-
-$arch = [Environment]::GetEnvironmentVariable("PROCESSOR_ARCHITECTURE")
-
-switch ($arch) {
-    "AMD64" { $asset = "enx-windows-x86_64.exe" }
-    "ARM64" {
-        throw "windows ARM64 binary is not published yet; please use x64 emulation or publish an ARM64 asset"
-    }
-    default {
-        throw "unsupported windows architecture: $arch"
-    }
-}
-
-$downloadUrl = "https://github.com/$repo/releases/download/$channel/$asset"
-$tmpFile = [System.IO.Path]::GetTempFileName()
-
-try {
-    Write-Host "==> downloading $asset"
-    Invoke-WebRequest -Uri $downloadUrl -OutFile $tmpFile -UseBasicParsing
-
-    Write-Host "==> installing to $installDir/enx.exe"
-    New-Item -ItemType Directory -Path $installDir -Force | Out-Null
-
-    $enxBin = Join-Path $installDir "enx.exe"
-    Move-Item -Path $tmpFile -Destination $enxBin -Force
-
-    # Add to user PATH if not already present
-    $userPath = [Environment]::GetEnvironmentVariable("PATH", "User") -split ";"
-    if ($userPath -notcontains $installDir) {
-        Write-Host "==> adding $installDir to user PATH"
-        $newPath = ([Environment]::GetEnvironmentVariable("PATH", "User") -split ";") + $installDir
-        $newPath = $newPath -join ";"
-        [Environment]::SetEnvironmentVariable("PATH", $newPath, "User")
-    }
-
-    Write-Host "==> running enx setup"
-    & $enxBin setup
-
-    Write-Host ""
-    Write-Host "setup finished"
-    Write-Host ""
-    Write-Host "enx is now installed and available in your PATH"
-    Write-Host "shell integration (enx cd, enx env) is configured for Git Bash"
-    Write-Host ""
-    Write-Host "to get started, open Git Bash and run: enx --help"
-    Write-Host "if you don't have Git Bash, install Git for Windows: https://git-scm.com"
-}
-finally {
-    if (Test-Path $tmpFile) {
-        Remove-Item $tmpFile -Force -ErrorAction SilentlyContinue
-    }
-}
+Write-Host "The PowerShell installer has been retired."
+Write-Host ""
+Write-Host "Use the POSIX installer from Git Bash, MSYS2, Cygwin, or WSL:"
+Write-Host ""
+Write-Host "  curl -fsSL https://raw.githubusercontent.com/enxilium/enx-cli/main/scripts/install.sh | sh"
+Write-Host ""
+throw "Use scripts/install.sh from a POSIX shell."

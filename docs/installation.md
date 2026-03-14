@@ -8,7 +8,7 @@ nav_order: 2
 
 {: .no_toc }
 
-enx provides one-line installers for macOS, Linux, and Windows. You can also build from source.
+enx provides a one-line POSIX-shell installer that works across macOS, Linux, and Windows POSIX environments. You can also build from source.
 {: .fs-6 .fw-300 }
 
 ## Table of Contents
@@ -20,19 +20,21 @@ enx provides one-line installers for macOS, Linux, and Windows. You can also bui
 
 ---
 
-## macOS / Linux
+## Install with POSIX shell (all OSes)
 
-Run the installer script — it downloads the latest nightly binary, places it in `~/.local/bin`, and runs `enx setup`:
+Run the installer script from a POSIX shell (`bash`, `zsh`, or `fish`) — it downloads the latest nightly binary, places it in `~/.local/bin`, and runs `enx setup`:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/enxilium/enx-cli/main/scripts/install.sh | sh
 ```
 
+On Windows, use Git Bash, MSYS2, Cygwin, or WSL.
+
 ### What the script does
 
-1. Detects your OS and architecture (x86_64 / aarch64, Linux / macOS)
+1. Detects your OS and architecture (Linux/macOS: x86_64 or aarch64, Windows POSIX env: x86_64)
 2. Downloads the matching binary from the latest `nightly` release on GitHub
-3. Installs it to `~/.local/bin/enx` (override with `ENX_INSTALL_DIR`)
+3. Installs it to `~/.local/bin` (override with `ENX_INSTALL_DIR`)
 4. Runs `enx setup` to create your global config and configure shell integration
 
 ### Environment variables
@@ -41,49 +43,7 @@ curl -fsSL https://raw.githubusercontent.com/enxilium/enx-cli/main/scripts/insta
 | :---------------- | :----------------- | :--------------------------------------- |
 | `ENX_REPO`        | `enxilium/enx-cli` | GitHub repo to download from (for forks) |
 | `ENX_CHANNEL`     | `nightly`          | Release tag to install                   |
-| `ENX_INSTALL_DIR` | `~/.local/bin`     | Where to place the binary                |
-
----
-
-## Windows
-
-**Prerequisite:** [Git for Windows](https://git-scm.com) (provides Git Bash).
-
-### Step 1 — Install the binary
-
-Open PowerShell and run:
-
-```powershell
-iwr -useb https://raw.githubusercontent.com/enxilium/enx-cli/main/scripts/install.ps1 | iex
-```
-
-### Step 2 — Use enx from Git Bash
-
-Shell integration (needed for `enx cd`, `enx env`) is configured for **Git Bash**. Open Git Bash and verify:
-
-```bash
-enx --help
-```
-
-### What the script does
-
-1. Detects architecture (AMD64)
-2. Downloads the Windows binary from the latest `nightly` release
-3. Installs to `~\AppData\Local\enx\bin\enx.exe`
-4. Adds the install directory to your user `PATH` if it isn't already there
-5. Runs `enx setup` (configures shell integration for Git Bash)
-
-{: .note }
-
-> Basic commands like `enx projects`, `enx run`, and `enx up` work from any shell (PowerShell, cmd, Git Bash). Only `enx cd` and `enx env` require Git Bash because they need to modify the parent shell's state.
-
-### Environment variables
-
-| Variable          | Default                   | Description                  |
-| :---------------- | :------------------------ | :--------------------------- |
-| `ENX_REPO`        | `enxilium/enx-cli`        | GitHub repo to download from |
-| `ENX_CHANNEL`     | `nightly`                 | Release tag to install       |
-| `ENX_INSTALL_DIR` | `~\AppData\Local\enx\bin` | Where to place the binary    |
+| `ENX_INSTALL_DIR` | `~/.local/bin`     | Where to place the binary directory      |
 
 ---
 
@@ -107,10 +67,10 @@ After installation, `enx setup` runs automatically. It:
 
 - Creates the global config directory (`~/.config/enx/` on Linux/macOS, `~\AppData\Roaming\enx\` on Windows)
 - Initializes `config.toml` and `registry.toml`
-- Configures shell integration (Bash or Zsh; Git Bash on Windows)
+- Configures shell integration for Bash or Zsh
 
 If shell integration does not take effect immediately, restart your shell or source your shell config file.
 
 {: .tip }
 
-> If `~/.local/bin` (or the Windows equivalent) is not in your `PATH`, you'll need to add it manually to your shell profile.
+> If `~/.local/bin` is not in your `PATH`, add it to your shell profile.
