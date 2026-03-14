@@ -198,33 +198,54 @@ fn normalize_shell_name(shell: &str) -> Option<&'static str> {
 fn detect_parent_shell() -> Option<String> {
     use std::process::Command;
 
-    let ppid = std::os::unix::process::parent_id();
+    let mut pid = std::os::unix::process::parent_id();
 
-    let output = Command::new("ps")
-        .arg("-p")
-        .arg(ppid.to_string())
-        .arg("-o")
-        .arg("comm=")
-        .output()
-        .ok()?;
+    for _ in 0..8 {
+        if pid == 0 {
+            return None;
+        }
 
-    if !output.status.success() {
-        return None;
+        let output = Command::new("ps")
+            .arg("-p")
+            .arg(pid.to_string())
+            .arg("-o")
+            .arg("comm=")
+            .arg("-o")
+            .arg("ppid=")
+            .output()
+            .ok()?;
+
+        if !output.status.success() {
+            return None;
+        }
+
+        let line = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        if line.is_empty() {
+            return None;
+        }
+
+        let mut parts = line.split_whitespace();
+        let comm = parts.next()?.to_ascii_lowercase();
+        let next_pid = parts
+            .next()
+            .and_then(|p| p.parse::<u32>().ok())
+            .unwrap_or(0);
+
+        let base = std::path::Path::new(&comm)
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or(&comm)
+            .trim_start_matches('-');
+
+        match base {
+            "fish" | "zsh" | "bash" => return Some(base.to_string()),
+            _ => {
+                pid = next_pid;
+            }
+        }
     }
 
-    let comm = String::from_utf8_lossy(&output.stdout)
-        .trim()
-        .to_ascii_lowercase();
-    let base = std::path::Path::new(&comm)
-        .file_name()
-        .and_then(|name| name.to_str())
-        .unwrap_or(&comm)
-        .trim_start_matches('-');
-
-    match base {
-        "fish" | "zsh" | "bash" => Some(base.to_string()),
-        _ => None,
-    }
+    None
 }
 
 #[cfg(not(unix))]
@@ -324,19 +345,45 @@ fn ensure_source_line(rc_path: &std::path::Path, source_line: &str) -> anyhow::R
         String::new()
     };
 
-    if existing.contains(source_line) {
-        return Ok(());
+    let mut found_current = false;
+    let mut kept_lines: Vec<&str> = Vec::new();
+
+    for line in existing.lines() {
+        let trimmed = line.trim();
+        if trimmed == source_line {
+            found_current = true;
+            kept_lines.push(line);
+            continue;
+        }
+
+        if is_enx_shell_source_line(trimmed) {
+            continue;
+        }
+
+        kept_lines.push(line);
     }
 
-    let mut updated = existing;
+    let mut updated = kept_lines.join("\n");
     if !updated.is_empty() && !updated.ends_with('\n') {
         updated.push('\n');
     }
-    updated.push_str(source_line);
-    updated.push('\n');
+    if !found_current {
+        updated.push_str(source_line);
+        updated.push('\n');
+    }
 
     std::fs::write(rc_path, updated)?;
     Ok(())
+}
+
+fn is_enx_shell_source_line(line: &str) -> bool {
+    let has_source = line.contains("source ");
+    let has_init = line.contains("/enx/shell/init.sh")
+        || line.contains("/enx/shell/init.fish")
+        || line.contains("\\enx\\shell\\init.sh")
+        || line.contains("\\enx\\shell\\init.fish");
+
+    has_source && has_init
 }
 
 /// On Windows, ensure the binary's directory is in the user PATH.

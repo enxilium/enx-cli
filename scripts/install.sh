@@ -39,15 +39,35 @@ detect_invoking_shell() {
     fi
 
     if command -v ps >/dev/null 2>&1; then
-        parent_comm=$(ps -p "$PPID" -o comm= 2>/dev/null || true)
-        parent_comm=$(basename "$parent_comm" | tr '[:upper:]' '[:lower:]' | sed 's/^-//')
+        pid="$PPID"
 
-        case "$parent_comm" in
-            fish|zsh|bash)
-                echo "$parent_comm"
-                return
-                ;;
-        esac
+        i=0
+        while [ "$i" -lt 8 ] && [ -n "$pid" ]; do
+            case "$pid" in
+                ''|*[!0-9]*) break ;;
+            esac
+            if [ "$pid" -le 0 ]; then
+                break
+            fi
+
+            line=$(ps -p "$pid" -o comm= -o ppid= 2>/dev/null | awk 'NF{print; exit}')
+            [ -z "$line" ] && break
+
+            comm=$(printf '%s' "$line" | awk '{print $1}')
+            next_pid=$(printf '%s' "$line" | awk '{print $2}')
+
+            comm=$(basename "$comm" | tr '[:upper:]' '[:lower:]' | sed 's/^-//')
+
+            case "$comm" in
+                fish|zsh|bash)
+                    echo "$comm"
+                    return
+                    ;;
+            esac
+
+            pid="$next_pid"
+            i=$((i + 1))
+        done
     fi
 
     echo ""
