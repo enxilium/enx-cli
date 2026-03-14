@@ -32,11 +32,11 @@ A child process cannot change the parent shell's working directory. This means `
 
 When you run `enx setup`, it regenerates enx shell scripts and appends/repairs source lines in your shell config files:
 
-| Shell              | Config file                  |
-| :----------------- | :--------------------------- |
-| Bash               | `~/.bashrc`                  |
-| Zsh                | `~/.zshrc`                   |
-| Git Bash (Windows) | `~/.bashrc`                  |
+| Shell              | Config file |
+| :----------------- | :---------- |
+| Bash               | `~/.bashrc` |
+| Zsh                | `~/.zshrc`  |
+| Git Bash (Windows) | `~/.bashrc` |
 
 {: .tip }
 
