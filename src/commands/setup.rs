@@ -237,10 +237,10 @@ fn detect_parent_shell() -> Option<String> {
 /// Priority follows active-shell markers first (`ZSH_VERSION`,
 /// `BASH_VERSION`, `FISH_VERSION`), then falls back to `$SHELL`.
 fn detect_shell() -> anyhow::Result<String> {
-    if let Ok(explicit_shell) = std::env::var("ENX_SETUP_SHELL") {
-        if let Some(shell) = normalize_shell_name(&explicit_shell) {
-            return Ok(shell.to_string());
-        }
+    if let Ok(explicit_shell) = std::env::var("ENX_SETUP_SHELL")
+        && let Some(shell) = normalize_shell_name(&explicit_shell)
+    {
+        return Ok(shell.to_string());
     }
 
     if has_non_empty_env("FISH_VERSION") {
