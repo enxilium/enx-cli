@@ -203,7 +203,9 @@ fn detect_parent_shell() -> Option<String> {
         return None;
     }
 
-    let comm = String::from_utf8_lossy(&output.stdout).trim().to_ascii_lowercase();
+    let comm = String::from_utf8_lossy(&output.stdout)
+        .trim()
+        .to_ascii_lowercase();
     let base = std::path::Path::new(&comm)
         .file_name()
         .and_then(|name| name.to_str())
