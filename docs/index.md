@@ -21,6 +21,16 @@ enx is a cross-platform CLI that manages project navigation, environment bootstr
 
 ---
 
+## Demo
+
+<video controls preload="metadata" style="width: 100%; max-width: 960px; border-radius: 8px;">
+  <source src="{{ '/enx-cli-demo.mkv' | relative_url }}" type="video/x-matroska">
+  Your browser does not support MKV playback.
+  <a href="{{ '/enx-cli-demo.mkv' | relative_url }}">Download the demo video</a>.
+</video>
+
+---
+
 <div class="feature-grid" markdown="0">
   <div class="feature-card">
     <h3>🧭 Project Navigation</h3>
