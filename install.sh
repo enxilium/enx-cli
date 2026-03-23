@@ -24,6 +24,17 @@ ARCH=$(uname -m)
 
 BIN_NAME="enx"
 
+validate_windows_binary() {
+    file_path="$1"
+    magic=$(dd if="$file_path" bs=1 count=2 2>/dev/null | od -An -tx1 | tr -d ' \n')
+
+    if [ "$magic" != "4d5a" ]; then
+        echo "error: downloaded windows asset is not a valid PE executable (expected MZ header)" >&2
+        echo "error: refusing to install to avoid an infinite launcher loop" >&2
+        exit 1
+    fi
+}
+
 strip_enx_source_lines() {
     file_path="$1"
     [ -f "$file_path" ] || return 0
@@ -83,21 +94,23 @@ if ! curl -fsSL "$DOWNLOAD_URL" -o "$TMP_FILE"; then
     exit 1
 fi
 
+if [ "$BIN_NAME" = "enx.exe" ]; then
+    validate_windows_binary "$TMP_FILE"
+fi
+
 echo "==> installing to $INSTALL_DIR/$BIN_NAME"
 mkdir -p "$INSTALL_DIR"
+
+if [ "$BIN_NAME" = "enx.exe" ]; then
+    # Remove legacy shim + prior binary first so corrupted or linked files
+    # cannot survive the reinstall.
+    rm -f "$INSTALL_DIR/enx" "$INSTALL_DIR/enx.exe"
+fi
+
 chmod +x "$TMP_FILE"
 mv "$TMP_FILE" "$INSTALL_DIR/$BIN_NAME"
 
-if [ "$BIN_NAME" = "enx.exe" ]; then
-    cat > "$INSTALL_DIR/enx" <<'EOF'
-#!/usr/bin/env sh
-SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-exec "$SCRIPT_DIR/enx.exe" "$@"
-EOF
-    chmod +x "$INSTALL_DIR/enx"
-fi
-
-ENX_BIN="$INSTALL_DIR/enx"
+ENX_BIN="$INSTALL_DIR/$BIN_NAME"
 
 # Remove stale shell integration entries/files so `enx setup` can fully
 # regenerate a clean configuration.

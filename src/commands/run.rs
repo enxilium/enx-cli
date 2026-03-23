@@ -96,11 +96,7 @@ pub fn execute_command(
     working_dir: &Path,
     env_vars: &HashMap<String, String>,
 ) -> anyhow::Result<()> {
-    let (shell, flag) = if cfg!(target_os = "windows") {
-        ("cmd", "/C")
-    } else {
-        ("sh", "-c")
-    };
+    let (shell, flag) = shell_command();
 
     let status = std::process::Command::new(shell)
         .arg(flag)
@@ -129,11 +125,7 @@ pub fn execute_command_with_spinner(
 ) -> anyhow::Result<()> {
     let sp = crate::output::spinner(command);
 
-    let (shell, flag) = if cfg!(target_os = "windows") {
-        ("cmd", "/C")
-    } else {
-        ("sh", "-c")
-    };
+    let (shell, flag) = shell_command();
 
     let output = std::process::Command::new(shell)
         .arg(flag)
@@ -159,6 +151,14 @@ pub fn execute_command_with_spinner(
     }
 
     Ok(())
+}
+
+fn shell_command() -> (&'static str, &'static str) {
+    if cfg!(target_os = "windows") {
+        ("bash", "-lc")
+    } else {
+        ("sh", "-c")
+    }
 }
 
 fn list_tasks(project_dir: &Path) -> anyhow::Result<()> {
